@@ -55,49 +55,82 @@ fn powerConsumption(samples: []const []const u8) !void {
 }
 
 fn lifeSupportRating(samples: []const []const u8) !void {
-    var candidates_buffer: [64 * sample_count]u8 = undefined;
-    var candidates_allocator = std.heap.FixedBufferAllocator.init(candidates_buffer[0..]);
-    var candidates = try std.ArrayList([]const u8).initCapacity(candidates_allocator.allocator(), sample_count);
+    var oxygen_buffer: [64 * sample_count]u8 = undefined;
+    var oxygen_allocator = std.heap.FixedBufferAllocator.init(oxygen_buffer[0..]);
+    var oxygen_candidates = try std.ArrayList([]const u8).initCapacity(oxygen_allocator.allocator(), sample_count);
+
+    var co2_buffer: [64 * sample_count]u8 = undefined;
+    var co2_allocator = std.heap.FixedBufferAllocator.init(co2_buffer[0..]);
+    var co2_candidates = try std.ArrayList([]const u8).initCapacity(co2_allocator.allocator(), sample_count);
 
     for (samples) |sample| {
-        candidates.appendAssumeCapacity(sample);
+        oxygen_candidates.appendAssumeCapacity(sample);
+        co2_candidates.appendAssumeCapacity(sample);
     }
 
     var digit_index: usize = 0;
     while (digit_index < sample_length):(digit_index += 1) {
-        var one_count: u32 = 0;
-        for (candidates.items) |candidate| {
-            if (candidate[digit_index] == '1') {
-                one_count += 1;
+        if (oxygen_candidates.items.len > 1) {
+            var one_count: u32 = 0;
+            for (oxygen_candidates.items) |candidate| {
+                if (candidate[digit_index] == '1') {
+                    one_count += 1;
+                }
+            }
+            const zero_count = oxygen_candidates.items.len - one_count;
+            const needs_one = one_count >= zero_count;
+
+            var i: usize = oxygen_candidates.items.len - 1;
+            while (true) {
+                const candidate = oxygen_candidates.items[i];
+                if (needs_one != (candidate[digit_index] == '1')) {
+                    _ = oxygen_candidates.swapRemove(i);
+                }
+
+                if (i == 0) {
+                    break;
+                }
+
+                i -= 1;
             }
         }
-        const zero_count = candidates.items.len - one_count;
-        const needs_one = one_count >= zero_count;
 
-        var i: usize = candidates.items.len - 1;
-        while (true) {
-            const candidate = candidates.items[i];
-            if (needs_one != (candidate[digit_index] == '1')) {
-                _ = candidates.swapRemove(i);
+        if (co2_candidates.items.len > 1) {
+            var one_count: u32 = 0;
+            for (co2_candidates.items) |candidate| {
+                if (candidate[digit_index] == '1') {
+                    one_count += 1;
+                }
             }
+            const zero_count = co2_candidates.items.len - one_count;
+            const needs_one = one_count < zero_count;
 
-            if (i == 0) {
-                break;
+            var i: usize = co2_candidates.items.len - 1;
+            while (true) {
+                const candidate = co2_candidates.items[i];
+                if (needs_one != (candidate[digit_index] == '1')) {
+                    _ = co2_candidates.swapRemove(i);
+                }
+
+                if (i == 0) {
+                    break;
+                }
+
+                i -= 1;
             }
-
-            i -= 1;
         }
 
-        if (candidates.items.len == 1) {
+        if (oxygen_candidates.items.len <= 1 and co2_candidates.items.len <= 1) {
             break;
-        }
-        if (candidates.items.len == 0) {
-            unreachable;
         }
     }
 
-    const oxygen = try std.fmt.parseInt(u32, candidates.items[0], 2);
+    std.debug.assert(oxygen_candidates.items.len == 1);
+    std.debug.assert(co2_candidates.items.len == 1);
 
-    std.debug.print("oxygen is {d}\n", .{ oxygen });
+    const oxygen = try std.fmt.parseInt(u32, oxygen_candidates.items[0], 2);
+    const co2 = try std.fmt.parseInt(u32, co2_candidates.items[0], 2);
+
+    std.debug.print("oxygen = {d}, co2 = {d}\n", .{ oxygen, co2 });
 }
 
