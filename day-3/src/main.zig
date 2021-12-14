@@ -1,7 +1,5 @@
 const std = @import("std");
 
-var i: usize = undefined;
-
 const use_test_input = true;
 const filename = if (use_test_input) "test_input" else "real_input";
 const sample_count = if (use_test_input) 12 else 1000;
@@ -14,10 +12,21 @@ pub fn main() !void {
 
     var buffer: [sample_length]u8 = undefined;
 
-    //const one_counts = [_]u32{0} ** sample_length;
-    i = 0;
-    while (i < sample_count):(i += 1) {
+    var one_counts = [_]u32{0} ** sample_length;
+    var sample_index: usize = 0;
+    while (sample_index < sample_count):(sample_index += 1) {
         const line = try file.reader().readUntilDelimiter(buffer[0..], '\n');
-        std.debug.print("{s} ", .{ line });
+        
+        for (line) |char, i| {
+            if (char == '1') {
+                one_counts[i] += 1;
+            }
+        }
     }
+
+    std.debug.print("one counts: ", .{});
+    for (one_counts) |count| {
+        std.debug.print("{d}", .{ count });
+    }
+    std.debug.print("\n", .{});
 }
