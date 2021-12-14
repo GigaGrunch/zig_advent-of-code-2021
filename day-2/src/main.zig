@@ -12,15 +12,19 @@ pub fn main() !void {
     defer input_file.close();
 
     var horizontal_position: u32 = 0;
+    var aim: u32 = 0;
     var depth: u32 = 0;
 
     i = 0;
     while (i < input_length):(i += 1) {
         const command = try getNextCommand(input_file);
         switch (command.type) {
-            .Forward => horizontal_position += command.value,
-            .Down => depth += command.value,
-            .Up => depth -= command.value,
+            .Forward => {
+                horizontal_position += command.value;
+                depth += aim * command.value;
+            },
+            .Down => aim += command.value,
+            .Up => aim -= command.value,
         }
     }
 
