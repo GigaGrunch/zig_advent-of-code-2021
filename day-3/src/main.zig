@@ -24,9 +24,12 @@ pub fn main() !void {
         }
     }
 
-    std.debug.print("one counts: ", .{});
-    for (one_counts) |count| {
-        std.debug.print("{d}", .{ count });
+    var gamma_string: [sample_length]u8 = undefined;
+    var epsilon_string: [sample_length]u8 = undefined;
+    for (one_counts) |count, i| {
+        gamma_string[i] = if (count > sample_count / 2) '1' else '0';
+        epsilon_string[i] = if (count > sample_count / 2) '0' else '1';
     }
-    std.debug.print("\n", .{});
+
+    std.debug.print("gamma: {s}\nepsilon: {s}\n", .{ gamma_string, epsilon_string });
 }
