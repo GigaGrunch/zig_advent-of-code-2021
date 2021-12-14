@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const use_test_input = true;
+const use_test_input = false;
 const filename = if (use_test_input) "test_input" else "real_input";
 const sample_count = if (use_test_input) 12 else 1000;
 const sample_length = if (use_test_input) 5 else 12;
@@ -33,6 +33,7 @@ pub fn main() !void {
 
     const gamma = try std.fmt.parseInt(u32, gamma_string[0..], 2);
     const epsilon = try std.fmt.parseInt(u32, epsilon_string[0..], 2);
+    const power_consumption = gamma * epsilon;
 
-    std.debug.print("gamma = {d}, epsilon = {d}\n", .{ gamma, epsilon });
+    std.debug.print("power consumption is {d}\n", .{ power_consumption });
 }
