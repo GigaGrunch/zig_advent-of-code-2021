@@ -31,5 +31,8 @@ pub fn main() !void {
         epsilon_string[i] = if (count > sample_count / 2) '0' else '1';
     }
 
-    std.debug.print("gamma: {s}\nepsilon: {s}\n", .{ gamma_string, epsilon_string });
+    const gamma = try std.fmt.parseInt(u32, gamma_string[0..], 2);
+    const epsilon = try std.fmt.parseInt(u32, epsilon_string[0..], 2);
+
+    std.debug.print("gamma = {d}, epsilon = {d}\n", .{ gamma, epsilon });
 }
