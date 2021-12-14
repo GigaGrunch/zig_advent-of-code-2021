@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const use_test_input = true;
+const use_test_input = false;
 const filename = if (use_test_input) "test_input" else "real_input";
 const sample_count = if (use_test_input) 12 else 1000;
 const sample_length = if (use_test_input) 5 else 12;
@@ -130,7 +130,8 @@ fn lifeSupportRating(samples: []const []const u8) !void {
 
     const oxygen = try std.fmt.parseInt(u32, oxygen_candidates.items[0], 2);
     const co2 = try std.fmt.parseInt(u32, co2_candidates.items[0], 2);
+    const life_support_rating = oxygen * co2;
 
-    std.debug.print("oxygen = {d}, co2 = {d}\n", .{ oxygen, co2 });
+    std.debug.print("life support rating is {d}\n", .{ life_support_rating });
 }
 
