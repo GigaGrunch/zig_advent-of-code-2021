@@ -64,9 +64,7 @@ fn lifeSupportRating(samples: []const []const u8) !void {
     var digit_index: usize = 0;
     while (digit_index < sample_length):(digit_index += 1) {
         var one_count: u32 = 0;
-        var index_index: usize = 0;
-        while (index_index < candidate_count):(index_index += 1) {
-            const i = candidate_indices[index_index];
+        for (candidate_indices[0..candidate_count]) |i| {
             if (samples[i][digit_index] == '1') {
                 one_count += 1;
             }
@@ -74,7 +72,7 @@ fn lifeSupportRating(samples: []const []const u8) !void {
         const zero_count = candidate_count - one_count;
         const needs_one = one_count >= zero_count;
 
-        index_index = candidate_count - 1;
+        var index_index: usize = candidate_count - 1;
         while (true) {
             const i = candidate_indices[index_index];
             if (needs_one != (samples[i][digit_index] == '1')) {
