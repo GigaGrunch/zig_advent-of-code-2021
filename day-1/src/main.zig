@@ -8,8 +8,14 @@ pub fn main() !void {
     var input_file = try cwd.openFile("input", .{});
     defer input_file.close();
 
-    const first_depth = (try getNextInt(input_file)) orelse unreachable;
-    std.debug.print("{d}\n", .{ first_depth });
+    var increase_count: u32 = 0;
+    var previous = (try getNextInt(input_file)) orelse unreachable;
+    while (try getNextInt(input_file)) |depth| {
+        if (depth > previous) increase_count += 1;
+        previous = depth;
+    }
+
+    std.debug.print("increase count: {d}\n", .{ increase_count });
 }
 
 fn getNextInt(file: std.fs.File) !?u32 {
