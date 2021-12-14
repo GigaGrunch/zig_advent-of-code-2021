@@ -1,9 +1,12 @@
 const std = @import("std");
 
-pub fn main() anyerror!void {
-    std.log.info("All your codebase are belong to us.", .{});
-}
+pub fn main() !void {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    var allocator = arena.allocator();
 
-test "basic test" {
-    try std.testing.expectEqual(10, 3 + 7);
+    var cwd = std.fs.cwd();
+    const input = try cwd.readFileAlloc(allocator, "input", 1024*1024*1024);
+
+    std.debug.print("{s}\n", .{ input });
 }
