@@ -8,11 +8,22 @@ pub fn main() !void {
     var input_file = try cwd.openFile("input", .{});
     defer input_file.close();
 
+    var horizontal_position: u32 = 0;
+    var depth: u32 = 0;
+
     i = 0;
     while (i < input_length):(i += 1) {
         const command = try getNextCommand(input_file);
-        std.debug.print("{} {} ", .{ command.type, command.value });
+        switch (command.type) {
+            .Forward => horizontal_position += command.value,
+            .Down => depth += command.value,
+            .Up => depth -= command.value,
+        }
     }
+
+    std.debug.print(
+        "horizontal position: {d}, depth: {d}, product: {d}\n", 
+        .{ horizontal_position, depth, horizontal_position * depth });
 }
 
 fn getNextCommand(file: std.fs.File) !Command {
