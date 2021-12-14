@@ -59,7 +59,9 @@ pub fn main() !void {
         if (is_condidate) break i;
     } else unreachable;
 
-    std.debug.print("oxygen index: {d}\n", .{ oxygen_index });
+    const oxygen = try std.fmt.parseInt(u32, samples[oxygen_index], 2);
+
+    std.debug.print("oxygen: {d}\n", .{ oxygen });
 }
 
 fn getSamples(file_text: []const u8) [sample_count][]const u8 {
