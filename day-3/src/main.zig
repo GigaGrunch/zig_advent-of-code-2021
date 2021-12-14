@@ -15,6 +15,22 @@ pub fn main() !void {
 
     const samples = getSamples(file_text[0..]);
 
+    try powerConsumption(samples[0..]);
+    try lifeSupportRating(samples[0..]);
+}
+
+fn getSamples(file_text: []const u8) [sample_count][]const u8 {
+    var samples: [sample_count][]const u8 = undefined;
+    var sample_index: usize = 0;
+    while (sample_index < sample_count):(sample_index += 1) {
+        const start = sample_index * (sample_length + 1);
+        const end = start + sample_length;
+        samples[sample_index] = file_text[start..end];
+    }
+    return samples;
+}
+
+fn powerConsumption(samples: []const []const u8) !void {
     var one_counts = [_]u32{0} ** sample_length;
     for (samples) |sample| {
         for (sample) |char, i| {
@@ -36,42 +52,51 @@ pub fn main() !void {
     const power_consumption = gamma * epsilon;
 
     std.debug.print("power consumption is {d}\n", .{ power_consumption });
-
-    var oxygen_candidates = [_]bool{true} ** sample_count;
-    var oxygen_candidates_count: usize = sample_count;
-    for (one_counts) |count, digit_index| {
-        const needs_one = count > sample_count / 2;
-
-        for (samples) |sample, sample_index| {
-            if (! oxygen_candidates[sample_index]) continue;
-
-            if (needs_one != (sample[digit_index] == '1')) {
-                oxygen_candidates[sample_index] = false;
-                oxygen_candidates_count -= 1;
-            }
-        }
-
-        if (oxygen_candidates_count <= 1) break;
-    }
-
-    const oxygen_index = 
-    for (oxygen_candidates) |is_condidate, i| {
-        if (is_condidate) break i;
-    } else unreachable;
-
-    const oxygen = try std.fmt.parseInt(u32, samples[oxygen_index], 2);
-
-    std.debug.print("oxygen: {d}\n", .{ oxygen });
 }
 
-fn getSamples(file_text: []const u8) [sample_count][]const u8 {
-    var samples: [sample_count][]const u8 = undefined;
-    var sample_index: usize = 0;
-    while (sample_index < sample_count):(sample_index += 1) {
-        const start = sample_index * (sample_length + 1);
-        const end = start + sample_length;
-        samples[sample_index] = file_text[start..end];
+fn lifeSupportRating(samples: []const []const u8) !void {
+    var candidate_indices: [sample_count]usize = undefined;
+    var candidate_count: u32 = sample_count;
+    for (samples) |_, i| {
+        candidate_indices[i] = i;
     }
-    return samples;
+
+    var digit_index: usize = 0;
+    while (digit_index < sample_length):(digit_index += 1) {
+        var one_count: u32 = 0;
+        var index_index: usize = 0;
+        while (index_index < candidate_count):(index_index += 1) {
+            const i = candidate_indices[index_index];
+            if (samples[i][digit_index] == '1') {
+                one_count += 1;
+            }
+        }
+        const zero_count = candidate_count - one_count;
+        const needs_one = one_count >= zero_count;
+
+        index_index = candidate_count - 1;
+        while (true) {
+            const i = candidate_indices[index_index];
+            if (needs_one != (samples[i][digit_index] == '1')) {
+                candidate_count -= 1;
+                candidate_indices[index_index] = candidate_indices[candidate_count];
+            }
+
+            if (index_index == 0) {
+                break;
+            }
+
+            index_index -= 1;
+        }
+
+        if (candidate_count <= 1) {
+            break;
+        }
+    }
+
+    const oxygen_index = candidate_indices[0];
+    const oxygen = try std.fmt.parseInt(u32, samples[oxygen_index], 2);
+
+    std.debug.print("oxygen is {d}\n", .{ oxygen });
 }
 
