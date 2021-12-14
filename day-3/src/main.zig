@@ -55,45 +55,48 @@ fn powerConsumption(samples: []const []const u8) !void {
 }
 
 fn lifeSupportRating(samples: []const []const u8) !void {
-    var candidate_indices: [sample_count]usize = undefined;
-    var candidate_count: u32 = sample_count;
-    for (samples) |_, i| {
-        candidate_indices[i] = i;
+    var candidates_buffer: [64 * sample_count]u8 = undefined;
+    var candidates_allocator = std.heap.FixedBufferAllocator.init(candidates_buffer[0..]);
+    var candidates = try std.ArrayList([]const u8).initCapacity(candidates_allocator.allocator(), sample_count);
+
+    for (samples) |sample| {
+        candidates.appendAssumeCapacity(sample);
     }
 
     var digit_index: usize = 0;
     while (digit_index < sample_length):(digit_index += 1) {
         var one_count: u32 = 0;
-        for (candidate_indices[0..candidate_count]) |i| {
-            if (samples[i][digit_index] == '1') {
+        for (candidates.items) |candidate| {
+            if (candidate[digit_index] == '1') {
                 one_count += 1;
             }
         }
-        const zero_count = candidate_count - one_count;
+        const zero_count = candidates.items.len - one_count;
         const needs_one = one_count >= zero_count;
 
-        var index_index: usize = candidate_count - 1;
+        var i: usize = candidates.items.len - 1;
         while (true) {
-            const i = candidate_indices[index_index];
-            if (needs_one != (samples[i][digit_index] == '1')) {
-                candidate_count -= 1;
-                candidate_indices[index_index] = candidate_indices[candidate_count];
+            const candidate = candidates.items[i];
+            if (needs_one != (candidate[digit_index] == '1')) {
+                _ = candidates.swapRemove(i);
             }
 
-            if (index_index == 0) {
+            if (i == 0) {
                 break;
             }
 
-            index_index -= 1;
+            i -= 1;
         }
 
-        if (candidate_count <= 1) {
+        if (candidates.items.len == 1) {
             break;
+        }
+        if (candidates.items.len == 0) {
+            unreachable;
         }
     }
 
-    const oxygen_index = candidate_indices[0];
-    const oxygen = try std.fmt.parseInt(u32, samples[oxygen_index], 2);
+    const oxygen = try std.fmt.parseInt(u32, candidates.items[0], 2);
 
     std.debug.print("oxygen is {d}\n", .{ oxygen });
 }
