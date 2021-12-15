@@ -11,19 +11,13 @@ pub fn main() !void {
     var file = try std.fs.cwd().openFile(filename, .{});
     defer file.close();
 
-    std.debug.print("\n", .{});
-
     var draw_numbers: [draw_count]u7 = undefined;
     {
-        std.debug.print("Draw numbers: ", .{});
-
         var i: usize = 0;
         while (i < draw_count - 1):(i += 1) {
             draw_numbers[i] = try drawNext(file, ',');
         }
         draw_numbers[i] = try drawNext(file, '\n');
-
-        std.debug.print("\n", .{});
     }
 
     var first_board_index: usize = 127;
@@ -32,13 +26,9 @@ pub fn main() !void {
 
     var board_index: usize = 0;
     while (board_index < board_count):(board_index += 1) {
-        std.debug.print("\n", .{});
-
         var board: [25]u7 = undefined;
         var draw_turns = [_]?u7 {null} ** 25;
         {
-            std.debug.print("Board {:>2}: ", .{ 0 });
-
             try file.reader().skipUntilDelimiterOrEof('\n');
             var buffer: [3]u8 = undefined;
             const whitespace = [_]u8 { ' ', '\n' };
@@ -59,22 +49,9 @@ pub fn main() !void {
                             break;
                         }
                     }
-
-                    std.debug.print("{:>2}", .{ board[i] });
-                    var turn_string_buffer: [5]u8 = undefined;
-                    var turn_string: []u8 = undefined;
-                    if (draw_turns[i]) |turn| {
-                        turn_string = try std.fmt.bufPrint(turn_string_buffer[0..], "({})", .{ turn });
-                    } else {
-                        turn_string = try std.fmt.bufPrint(turn_string_buffer[0..], "(-)", .{});
-                    }
-                    std.debug.print("{s:<5} ", .{ turn_string });
                 }
-                std.debug.print("\n          ", .{});
             }
         }
-
-        std.debug.print("\n", .{});
 
         var win_turn: u7 = 127;
 
@@ -141,13 +118,6 @@ pub fn main() !void {
             }
         }
 
-        if (o_winning_row) |winning_row| {
-            std.debug.print("winning row: {}({})\n", .{ winning_row, win_turn });
-        }
-        if (o_winning_column) |winning_column| {
-            std.debug.print("winning column: {}({})\n", .{ winning_column, win_turn });
-        }
-
         var score: u32 = 0;
         for (board) |num, i| {
             if (draw_turns[i] == null or draw_turns[i].? > win_turn) {
@@ -155,7 +125,6 @@ pub fn main() !void {
             }
         }
         score *= draw_numbers[win_turn];
-        std.debug.print("score: {}\n", .{ score });
 
         if (win_turn < first_board_turn) {
             first_board_turn = win_turn;
@@ -165,7 +134,7 @@ pub fn main() !void {
     }
 
     std.debug.print(
-        "\nboard {} wins at turn {} with score of {}\n",
+        "board {} wins at turn {} with score of {}\n",
         .{ first_board_index, first_board_turn, first_board_score });
 }
 
@@ -173,6 +142,5 @@ fn drawNext(file: std.fs.File, delimiter: u8) !u7 {
     var buffer: [2]u8 = undefined;
     const draw_string = try file.reader().readUntilDelimiter(buffer[0..], delimiter);
     const draw = try std.fmt.parseInt(u7, draw_string, 10);
-    std.debug.print("{} ", .{ draw });
     return draw;
 }
