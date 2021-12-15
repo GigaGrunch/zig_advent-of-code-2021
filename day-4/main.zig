@@ -102,8 +102,43 @@ pub fn main() !void {
         }
     }
 
+    var o_winning_column: ?usize = null;
+    {
+        var column: usize = 0;
+        while (column < 5):(column += 1) {
+            var o_column_win_turn: ?u7 = null;
+
+            var row: usize = 0;
+            while (row < 5):(row += 1) {
+                const i = row * 5 + column;
+
+                if (draw_turns[i]) |turn| {
+                    if (o_column_win_turn) |column_win_turn| {
+                        o_column_win_turn = @maximum(turn, column_win_turn);
+                    } else {
+                        o_column_win_turn = turn;
+                    }
+                } else {
+                    o_column_win_turn = null;
+                    break;
+                }
+            }
+
+            if (o_column_win_turn) |column_win_turn| {
+                if (column_win_turn < win_turn) {
+                    win_turn = column_win_turn;
+                    o_winning_row = null;
+                    o_winning_column = column;
+                }
+            }
+        }
+    }
+
     if (o_winning_row) |winning_row| {
         std.debug.print("winning row: {}({})\n", .{ winning_row, win_turn });
+    }
+    if (o_winning_column) |winning_column| {
+        std.debug.print("winning column: {}({})\n", .{ winning_column, win_turn });
     }
 }
 
