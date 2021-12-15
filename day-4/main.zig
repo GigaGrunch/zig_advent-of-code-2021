@@ -10,6 +10,8 @@ pub fn main() !void {
     var file = try std.fs.cwd().openFile(filename, .{});
     defer file.close();
 
+    std.debug.print("\n", .{});
+
     var draw: [draw_count]u7 = undefined;
     {
         std.debug.print("Draw: ", .{});
@@ -22,6 +24,33 @@ pub fn main() !void {
 
         std.debug.print("\n", .{});
     }
+
+    std.debug.print("\n", .{});
+
+    var board: [25]u7 = undefined;
+    {
+        std.debug.print("Board {:>2}: ", .{ 0 });
+
+        try file.reader().skipUntilDelimiterOrEof('\n');
+        var buffer: [3]u8 = undefined;
+        const whitespace = [_]u8 { ' ', '\n' };
+
+        var row: usize = 0;
+        while (row < 5):(row += 1) {
+            var column: usize = 0;
+            while (column < 5):(column += 1) {
+                const i = row * 5 + column;
+
+                _ = try file.reader().read(buffer[0..]);
+                const num_string = std.mem.trim(u8, buffer[0..], whitespace[0..]);
+                board[i] = try std.fmt.parseInt(u7, num_string, 10);
+                std.debug.print("{:>2} ", .{ board[i] });
+            }
+            std.debug.print("\n          ", .{});
+        }
+    }
+
+    std.debug.print("\n", .{});
 }
 
 fn drawNext(file: std.fs.File, delimiter: u8) !u7 {
