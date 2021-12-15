@@ -7,6 +7,8 @@ const input_length = if (use_example_input) 6 else 1000;
 var i: usize = undefined;
 
 pub fn main() !void {
+    std.debug.print("--- Day 2 ---\n", .{});
+
     var cwd = std.fs.cwd();
     var input_file = try cwd.openFile(input_filename, .{});
     defer input_file.close();

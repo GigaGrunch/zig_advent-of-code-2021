@@ -3,6 +3,8 @@ const std = @import("std");
 var i: usize = undefined;
 
 pub fn main() !void {
+    std.debug.print("--- Day 1 ---\n", .{});
+
     var cwd = std.fs.cwd();
     var input_file = try cwd.openFile("input", .{});
     defer input_file.close();

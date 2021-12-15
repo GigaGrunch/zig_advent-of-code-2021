@@ -6,6 +6,8 @@ const sample_count = if (use_test_input) 12 else 1000;
 const sample_length = if (use_test_input) 5 else 12;
 
 pub fn main() !void {
+    std.debug.print("--- Day 3 ---\n", .{});
+
     const cwd = std.fs.cwd();
     const file = try cwd.openFile(filename, .{});
     defer file.close();
