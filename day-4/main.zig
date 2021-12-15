@@ -68,6 +68,43 @@ pub fn main() !void {
     }
 
     std.debug.print("\n", .{});
+
+    var win_turn: u7 = 127;
+
+    var o_winning_row: ?usize = null;
+    {
+        var row: usize = 0;
+        while (row < 5):(row += 1) {
+            var o_row_win_turn: ?u7 = null;
+
+            var column: usize = 0;
+            while (column < 5):(column += 1) {
+                const i = row * 5 + column;
+
+                if (draw_turns[i]) |turn| {
+                    if (o_row_win_turn) |row_win_turn| {
+                        o_row_win_turn = @maximum(turn, row_win_turn);
+                    } else {
+                        o_row_win_turn = turn;
+                    }
+                } else {
+                    o_row_win_turn = null;
+                    break;
+                }
+            }
+
+            if (o_row_win_turn) |row_win_turn| {
+                if (row_win_turn < win_turn) {
+                    win_turn = row_win_turn;
+                    o_winning_row = row;
+                }
+            }
+        }
+    }
+
+    if (o_winning_row) |winning_row| {
+        std.debug.print("winning row: {}({})\n", .{ winning_row, win_turn });
+    }
 }
 
 fn drawNext(file: std.fs.File, delimiter: u8) !u7 {
