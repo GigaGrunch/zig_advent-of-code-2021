@@ -12,15 +12,15 @@ pub fn main() !void {
 
     std.debug.print("\n", .{});
 
-    var draw: [draw_count]u7 = undefined;
+    var draw_numbers: [draw_count]u7 = undefined;
     {
-        std.debug.print("Draw: ", .{});
+        std.debug.print("Draw numbers: ", .{});
 
         var i: usize = 0;
         while (i < draw_count - 1):(i += 1) {
-            draw[i] = try drawNext(file, ',');
+            draw_numbers[i] = try drawNext(file, ',');
         }
-        draw[i] = try drawNext(file, '\n');
+        draw_numbers[i] = try drawNext(file, '\n');
 
         std.debug.print("\n", .{});
     }
@@ -28,6 +28,7 @@ pub fn main() !void {
     std.debug.print("\n", .{});
 
     var board: [25]u7 = undefined;
+    var draw_turns = [_]?u7 {null} ** 25;
     {
         std.debug.print("Board {:>2}: ", .{ 0 });
 
@@ -44,7 +45,23 @@ pub fn main() !void {
                 _ = try file.reader().read(buffer[0..]);
                 const num_string = std.mem.trim(u8, buffer[0..], whitespace[0..]);
                 board[i] = try std.fmt.parseInt(u7, num_string, 10);
-                std.debug.print("{:>2} ", .{ board[i] });
+
+                for (draw_numbers) |draw, turn| {
+                    if (draw == board[i]) {
+                        draw_turns[i] = @intCast(u7, turn);
+                        break;
+                    }
+                }
+
+                std.debug.print("{:>2}", .{ board[i] });
+                var turn_string_buffer: [5]u8 = undefined;
+                var turn_string: []u8 = undefined;
+                if (draw_turns[i]) |turn| {
+                    turn_string = try std.fmt.bufPrint(turn_string_buffer[0..], "({})", .{ turn });
+                } else {
+                    turn_string = try std.fmt.bufPrint(turn_string_buffer[0..], "(-)", .{});
+                }
+                std.debug.print("{s:<5} ", .{ turn_string });
             }
             std.debug.print("\n          ", .{});
         }
