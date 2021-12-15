@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const use_test_input = false;
-const filename = if (use_test_input) "test_input" else "real_input";
+const filename = if (use_test_input) "day-3_test-input" else "day-3_real-input";
 const sample_count = if (use_test_input) 12 else 1000;
 const sample_length = if (use_test_input) 5 else 12;
 

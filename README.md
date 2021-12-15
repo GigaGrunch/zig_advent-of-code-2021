@@ -5,11 +5,12 @@
 * [Zig](https://ziglang.org) is an awesome programming language and you should use it, too!
 
 ## Project structure
-* Each day has its own folder which contains a `main.zig` that has all the source for that day.
-* The folders also contain my personal input files that I got from advent of code.
-* In some cases, I also added the sample input from the puzzle's explanation for testing. For now, that can be used with a simple boolean switch at the top of `main.zig`, but I might convert that to an actual zig test.
+* Each day has its own zig file like `day-1.zig`.
+* There is also a `all-days.zig` that runs all days.
+* My personal input texts that I got from advent of code are also stored for each day.
+* In some cases, I also added the sample input from the puzzle's explanation for testing. That can be used with a simple boolean switch at the top of the day's zig file.
 * The solution of the seconds puzzle of a day might replace the first one, but I've created git tags for each solution so you can always go back to the first one.
 
 ## How to run
 * [Download and install Zig](https://ziglang.org/learn/getting-started), but note that I am using the latest build of the master branch in december 2021.
-* In a shell, navigate to any of the day-xx folders and execute `zig run main.zig`
+* In a shell, execute `zig run day-X.zig` where X is a number for a day or simply execute `zig run all-days.zig` instead.

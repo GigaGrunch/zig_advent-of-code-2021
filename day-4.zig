@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const use_test_input = false;
-const filename = if (use_test_input) "example_input" else "real_input";
+const filename = if (use_test_input) "day-4_test-input" else "day-4_real-input";
 const draw_count = if (use_test_input) 27 else 100;
 const board_count = if (use_test_input) 3 else 100;
 

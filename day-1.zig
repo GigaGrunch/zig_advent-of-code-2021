@@ -6,7 +6,7 @@ pub fn main() !void {
     std.debug.print("--- Day 1 ---\n", .{});
 
     var cwd = std.fs.cwd();
-    var input_file = try cwd.openFile("input", .{});
+    var input_file = try cwd.openFile("day-1_real-input", .{});
     defer input_file.close();
     
     var depths: [2000]u32 = undefined;

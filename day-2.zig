@@ -1,7 +1,7 @@
 const std = @import("std");
 
 const use_example_input = false;
-const input_filename = if (use_example_input) "example_input" else "real_input";
+const input_filename = if (use_example_input) "day-2_test-input" else "day-2_real-input";
 const input_length = if (use_example_input) 6 else 1000;
 
 var i: usize = undefined;
