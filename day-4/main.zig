@@ -20,9 +20,9 @@ pub fn main() !void {
         draw_numbers[i] = try drawNext(file, '\n');
     }
 
-    var first_board_index: usize = 127;
-    var first_board_turn: u7 = 127;
-    var first_board_score: u32 = 0;
+    var last_board_index: usize = 127;
+    var last_board_turn: u7 = 0;
+    var last_board_score: u32 = 0;
 
     var board_index: usize = 0;
     while (board_index < board_count):(board_index += 1) {
@@ -126,16 +126,16 @@ pub fn main() !void {
         }
         score *= draw_numbers[win_turn];
 
-        if (win_turn < first_board_turn) {
-            first_board_turn = win_turn;
-            first_board_score = score;
-            first_board_index = board_index;
+        if (win_turn > last_board_turn) {
+            last_board_turn = win_turn;
+            last_board_score = score;
+            last_board_index = board_index;
         }
     }
 
     std.debug.print(
-        "board {} wins at turn {} with score of {}\n",
-        .{ first_board_index, first_board_turn, first_board_score });
+        "board {} wins last at turn {} with score of {}\n",
+        .{ last_board_index, last_board_turn, last_board_score });
 }
 
 fn drawNext(file: std.fs.File, delimiter: u8) !u7 {
