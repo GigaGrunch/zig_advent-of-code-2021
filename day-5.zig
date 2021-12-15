@@ -10,8 +10,7 @@ pub fn main() !void {
 
     var file = try std.fs.cwd().openFile(filename, .{});
 
-    // var vent_counts = [_]u9 {0} ** (edge_length * edge_length);
-
+    var vent_counts = [_]u9 {0} ** (edge_length * edge_length);
     {
         var buffer: [3]u8 = undefined;
         var line_index: usize = 0;
@@ -26,11 +25,32 @@ pub fn main() !void {
             const y2_string = try file.reader().readUntilDelimiter(buffer[0..], '\n');
             const y2 = try std.fmt.parseInt(u9, y2_string, 10);
 
-            std.debug.print("{},{} -> {},{}\n", .{x1,y1,x2,y2});
+            if (x1 == x2 or y1 == y2) {
+                var y = @minimum(y1, y2);
+                while (y < @maximum(y1, y2) + 1):(y += 1) {
+                    var x = @minimum(x1, x2);
+                    while (x < @maximum(x1, x2) + 1):(x += 1) {
+                        const i = y * edge_length + x;
+                        vent_counts[i] += 1;
+                    }
+                }
+            }
+        }
+    }
 
-            // check if line is vertical or horizontal
-
-            // increase count for all covered spots
+    {
+        var y: usize = 0;
+        while (y < edge_length):(y += 1) {
+            var x: usize = 0;
+            while (x < edge_length):(x += 1) {
+                const i = y * edge_length + x;
+                if (vent_counts[i] > 0) {
+                    std.debug.print("{}", .{vent_counts[i]});
+                } else {
+                    std.debug.print(".", .{});
+                }
+            }
+            std.debug.print("\n", .{});
         }
     }
 }
