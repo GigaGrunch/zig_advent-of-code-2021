@@ -25,27 +25,17 @@ pub fn main() !void {
             const y2_string = try file.reader().readUntilDelimiter(buffer[0..], '\n');
             const y2 = try std.fmt.parseInt(i32, y2_string, 10);
 
-            const is_horizontal = x1 == x2;
-            const is_vertical = y1 == y2;
-            const is_diagonal = !is_horizontal and !is_vertical;
+            {
+                var x_increment: i32 = 0;
+                var y_increment: i32 = 0;
 
-            if (is_horizontal) {
-                const increment: i32 = if (y1 < y2) 1 else -1;
-                var y = y1;
-                while (y != y2 + increment):(y += increment) {
-                    const i = @intCast(usize, y * edge_length + x1);
-                    vent_counts[i] += 1;
+                if (x1 != x2) {
+                    x_increment = if (x1 < x2) 1 else -1;
                 }
-            } else if (is_vertical) {
-                const increment: i32 = if (x1 < x2) 1 else -1;
-                var x = x1;
-                while (x != x2 + increment):(x += increment) {
-                    const i = @intCast(usize, y1 * edge_length + x);
-                    vent_counts[i] += 1;
+                if (y1 != y2) {
+                    y_increment = if (y1 < y2) 1 else -1;
                 }
-            } else if (is_diagonal) {
-                const x_increment: i32 = if (x1 < x2) 1 else -1;
-                const y_increment: i32 = if (y1 < y2) 1 else -1;
+
                 var x = x1;
                 var y = y1;
                 while (true) {
@@ -55,13 +45,10 @@ pub fn main() !void {
                     x += x_increment;
                     y += y_increment;
 
-                    if (x == x2 + x_increment) {
-                        if (y != y2 + y_increment) unreachable;
+                    if (x == x2 + x_increment and y == y2 + y_increment) {
                         break;
                     }
                 }
-            } else {
-                unreachable;
             }
         }
     }
