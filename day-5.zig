@@ -27,7 +27,7 @@ pub fn main() !void {
 
             const is_horizontal = x1 == x2;
             const is_vertical = y1 == y2;
-            // const is_diagonal = !is_horizontal and !is_vertical;
+            const is_diagonal = !is_horizontal and !is_vertical;
 
             if (is_horizontal) {
                 const increment: i32 = if (y1 < y2) 1 else -1;
@@ -43,6 +43,25 @@ pub fn main() !void {
                     const i = @intCast(usize, y1 * edge_length + x);
                     vent_counts[i] += 1;
                 }
+            } else if (is_diagonal) {
+                const x_increment: i32 = if (x1 < x2) 1 else -1;
+                const y_increment: i32 = if (y1 < y2) 1 else -1;
+                var x = x1;
+                var y = y1;
+                while (true) {
+                    const i = @intCast(usize, y * edge_length + x);
+                    vent_counts[i] += 1;
+
+                    x += x_increment;
+                    y += y_increment;
+
+                    if (x == x2 + x_increment) {
+                        if (y != y2 + y_increment) unreachable;
+                        break;
+                    }
+                }
+            } else {
+                unreachable;
             }
         }
     }
