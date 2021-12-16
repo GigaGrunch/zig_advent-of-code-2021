@@ -10,29 +10,38 @@ pub fn main() !void {
 
     var file = try std.fs.cwd().openFile(filename, .{});
 
-    var vent_counts = [_]u10 {0} ** (edge_length * edge_length);
+    var vent_counts = [_]i32 {0} ** (edge_length * edge_length);
     {
         var buffer: [3]u8 = undefined;
         var line_index: usize = 0;
         while (line_index < line_count):(line_index += 1) {
             const x1_string = try file.reader().readUntilDelimiter(buffer[0..], ',');
-            const x1 = try std.fmt.parseInt(u10, x1_string, 10);
+            const x1 = try std.fmt.parseInt(i32, x1_string, 10);
             const y1_string = try file.reader().readUntilDelimiter(buffer[0..], ' ');
-            const y1 = try std.fmt.parseInt(u10, y1_string, 10);
+            const y1 = try std.fmt.parseInt(i32, y1_string, 10);
             _ = try file.reader().readUntilDelimiter(buffer[0..], ' ');
             const x2_string = try file.reader().readUntilDelimiter(buffer[0..], ',');
-            const x2 = try std.fmt.parseInt(u10, x2_string, 10);
+            const x2 = try std.fmt.parseInt(i32, x2_string, 10);
             const y2_string = try file.reader().readUntilDelimiter(buffer[0..], '\n');
-            const y2 = try std.fmt.parseInt(u10, y2_string, 10);
+            const y2 = try std.fmt.parseInt(i32, y2_string, 10);
 
-            if (x1 == x2 or y1 == y2) {
-                var y: usize = @minimum(y1, y2);
-                while (y < @maximum(y1, y2) + 1):(y += 1) {
-                    var x: usize = @minimum(x1, x2);
-                    while (x < @maximum(x1, x2) + 1):(x += 1) {
-                        const i = y * edge_length + x;
-                        vent_counts[i] += 1;
-                    }
+            const is_horizontal = x1 == x2;
+            const is_vertical = y1 == y2;
+            // const is_diagonal = !is_horizontal and !is_vertical;
+
+            if (is_horizontal) {
+                const increment: i32 = if (y1 < y2) 1 else -1;
+                var y = y1;
+                while (y != y2 + increment):(y += increment) {
+                    const i = @intCast(usize, y * edge_length + x1);
+                    vent_counts[i] += 1;
+                }
+            } else if (is_vertical) {
+                const increment: i32 = if (x1 < x2) 1 else -1;
+                var x = x1;
+                while (x != x2 + increment):(x += increment) {
+                    const i = @intCast(usize, y1 * edge_length + x);
+                    vent_counts[i] += 1;
                 }
             }
         }
