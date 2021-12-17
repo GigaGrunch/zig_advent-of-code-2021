@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const use_test_input = true;
+const use_test_input = false;
 const filename = if (use_test_input) "day-6_test-input" else "day-6_real-input";
 
 pub fn main() !void {
@@ -18,9 +18,23 @@ pub fn main() !void {
         fish_count[timer] += 1;
     }
 
-    std.debug.print("initial fish counts: ", .{});
-    for (fish_count) |count, i| {
-        std.debug.print("{}x{} ", .{ count, i });
+    var day: usize = 0;
+    while (day < 80):(day += 1) {
+        const due_fish = fish_count[0];
+        fish_count[0] = fish_count[1];
+        fish_count[1] = fish_count[2];
+        fish_count[2] = fish_count[3];
+        fish_count[3] = fish_count[4];
+        fish_count[4] = fish_count[5];
+        fish_count[5] = fish_count[6];
+        fish_count[6] = fish_count[7] + due_fish;
+        fish_count[7] = fish_count[8];
+        fish_count[8] = due_fish;
     }
-    std.debug.print("\n", .{});
+
+    var total_count: u32 = 0;
+    for (fish_count) |count| {
+        total_count += count;
+    }
+    std.debug.print("total fish count after 80 days: {}\n", .{ total_count });
 }
