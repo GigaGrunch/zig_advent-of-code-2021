@@ -6,7 +6,7 @@ const filename = if (use_test_input) "day-6_test-input" else "day-6_real-input";
 pub fn main() !void {
     std.debug.print("--- Day 6 ---\n", .{});
 
-    var fish_count = [_]u32 {0} ** 9;
+    var fish_count = [_]u64 {0} ** 9;
 
     var file = try std.fs.cwd().openFile(filename, .{});
     while (true) {
@@ -19,7 +19,7 @@ pub fn main() !void {
     }
 
     var day: usize = 0;
-    while (day < 80):(day += 1) {
+    while (day < 256):(day += 1) {
         const due_fish = fish_count[0];
         fish_count[0] = fish_count[1];
         fish_count[1] = fish_count[2];
@@ -32,7 +32,7 @@ pub fn main() !void {
         fish_count[8] = due_fish;
     }
 
-    var total_count: u32 = 0;
+    var total_count: u64 = 0;
     for (fish_count) |count| {
         total_count += count;
     }
