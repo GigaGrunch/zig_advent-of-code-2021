@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const use_test_input = true;
+const use_test_input = false;
 const filename = if (use_test_input) "day-9_test-input" else "day-9_real-input";
 const line_length = if (use_test_input) 10 else 100;
 const line_count = if (use_test_input) 5 else 100;
@@ -51,7 +51,7 @@ pub fn main() !void {
         }
     }
 
-    // var basin_sizes = [_]u32 {0} ** 3;
+    var basin_sizes = [_]u32 {0} ** 3;
     {
         for (low_points.items) |low_point_index| {
             var size: u32 = 1;
@@ -97,9 +97,31 @@ pub fn main() !void {
                 }
             }
 
-            std.debug.print("basin size: {}\n", .{ size });
+            var smallest_basin_index: usize = 0;
+            var smallest_basin_size: u32 = 9999;
+            for (basin_sizes) |b_size, i| {
+                if (b_size < smallest_basin_size) {
+                    smallest_basin_index = i;
+                    smallest_basin_size = b_size;
+                }
+            }
+
+            if (smallest_basin_size < size) {
+                basin_sizes[smallest_basin_index] = size;
+            }
         }
     }
+
+    var basin_product: u32 = 1;
+
+    std.debug.print("largest basins are ", .{});
+    for (basin_sizes) |b_size| {
+        std.debug.print("{} ", .{ b_size });
+        basin_product *= b_size;
+    }
+    std.debug.print("\n", .{});
+
+    std.debug.print("the product is {}\n", .{ basin_product });
 }
 
 fn contains(haystack: []usize, needle: usize) bool {
