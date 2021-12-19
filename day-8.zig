@@ -10,6 +10,8 @@ pub fn main() !void {
     var file = try std.fs.cwd().openFile(filename, .{});
     defer file.close();
 
+    var output_sum: u32 = 0;
+
     var line_num: u32 = 0;
     while (line_num < line_count):(line_num += 1) {
         var buffer: [100]u8 = undefined;
@@ -33,11 +35,6 @@ pub fn main() !void {
                     else => { }
                 }
             }
-
-            std.debug.print("one is {s}\n", .{ one });
-            std.debug.print("four is {s}\n", .{ four });
-            std.debug.print("seven is {s}\n", .{ seven });
-            std.debug.print("eight is {s}\n", .{ eight });
         }
 
         var three: []const u8 = undefined; // count 5, shares 3 with seven
@@ -63,10 +60,6 @@ pub fn main() !void {
                     else => { }
                 }
             }
-
-            std.debug.print("three is {s}\n", .{ three });
-            std.debug.print("six is {s}\n", .{ six });
-            std.debug.print("nine is {s}\n", .{ nine });
         }
 
         var zero: []const u8 = undefined; // count 6, not six or nine
@@ -88,9 +81,6 @@ pub fn main() !void {
                     else => { }
                 }
             }
-
-            std.debug.print("zero is {s}\n", .{ zero });
-            std.debug.print("five is {s}\n", .{ five });
         }
 
         var two: []const u8 = undefined; // count 5 and not three or five
@@ -106,12 +96,62 @@ pub fn main() !void {
                     else => { }
                 }
             }
-
-            std.debug.print("two is {s}\n", .{ two });
         }
 
-        break;
+        const output = outer_split.next() orelse unreachable;
+        var output_split = std.mem.split(u8, output, " ");
+
+        var digit_index: u4 = 0;
+        while (digit_index < 4):(digit_index += 1) {
+            const digit_string = output_split.next() orelse unreachable;
+            var digit: u32 = undefined;
+
+            if (equals(digit_string, zero)) {
+                digit = 0;
+            }
+            else if (equals(digit_string, one)) {
+                digit = 1;
+            }
+            else if (equals(digit_string, two)) {
+                digit = 2;
+            }
+            else if (equals(digit_string, three)) {
+                digit = 3;
+            }
+            else if (equals(digit_string, four)) {
+                digit = 4;
+            }
+            else if (equals(digit_string, five)) {
+                digit = 5;
+            }
+            else if (equals(digit_string, six)) {
+                digit = 6;
+            }
+            else if (equals(digit_string, seven)) {
+                digit = 7;
+            }
+            else if (equals(digit_string, eight)) {
+                digit = 8;
+            }
+            else if (equals(digit_string, nine)) {
+                digit = 9;
+            }
+
+            switch (digit_index) {
+                0 => output_sum += digit * 1000,
+                1 => output_sum += digit * 100,
+                2 => output_sum += digit * 10,
+                3 => output_sum += digit,
+                else => unreachable
+            }
+        }
     }
+
+    std.debug.print("total output sum is {}\n", .{ output_sum });
+}
+
+fn equals(lhs: []const u8, rhs: []const u8) bool {
+    return lhs.len == rhs.len and shareCount(lhs, rhs) == lhs.len;
 }
 
 fn shareCount(lhs: []const u8, rhs: []const u8) u32 {
