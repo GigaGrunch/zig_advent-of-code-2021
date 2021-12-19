@@ -7,19 +7,20 @@ const day_4 = @import("day-4.zig");
 const day_5 = @import("day-5.zig");
 const day_6 = @import("day-6.zig");
 const day_7 = @import("day-7.zig");
+const day_8 = @import("day-8.zig");
 
 pub fn main() !void {
-    try day_1.main();
+    try run(day_1);
+    try run(day_2);
+    try run(day_3);
+    try run(day_4);
+    try run(day_5);
+    try run(day_6);
+    try run(day_7);
+    try run(day_8);
+}
+
+fn run(day: anytype) !void {
+    try day.main();
     std.debug.print("\n", .{});
-    try day_2.main();
-    std.debug.print("\n", .{});
-    try day_3.main();
-    std.debug.print("\n", .{});
-    try day_4.main();
-    std.debug.print("\n", .{});
-    try day_5.main();
-    std.debug.print("\n", .{});
-    try day_6.main();
-    std.debug.print("\n", .{});
-    try day_7.main();
 }
