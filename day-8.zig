@@ -9,6 +9,19 @@ const four_segment_count = 4;
 const seven_segment_count = 3;
 const eight_segment_count = 7;
 
+// 1: given by count 2            iteration 0
+// 4: given by count 4            iteration 0
+// 7: given by count 3            iteration 0
+// 8: given by count 7            iteration 0
+
+// 3: count 5 and shares 3 with 7 (DEP 7)
+// 5: count 5 and shares 5 with 6 (DEP 6)
+// 6: count 6 and shares 2 with 7 (DEP 7)
+// 9: count 6 and shares 4 with 4 (DEP 4)
+
+// 0: const 6 and not 6 or 9      (DEP 6,9)
+// 2: count 5 and not 3 or 5      (DEP 3,5)
+
 pub fn main() !void {
     std.debug.print("--- Day 8 ---\n", .{});
 
