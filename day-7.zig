@@ -11,22 +11,38 @@ pub fn main() !void {
     defer file.close();
 
     var crab_positions: [input_length]u16 = undefined;
-    var i: usize = 0;
-    while (i < input_length):(i += 1) {
-        var buffer: [4]u8 = undefined;
-        const delimiter: u8 = if (i != input_length - 1) ',' else '\n';
-        const pos_string = try file.reader().readUntilDelimiter(buffer[0..], delimiter);
-        crab_positions[i] = try std.fmt.parseInt(u16, pos_string, 10);
+    {
+        var i: usize = 0;
+        while (i < input_length):(i += 1) {
+            var buffer: [4]u8 = undefined;
+            const delimiter: u8 = if (i != input_length - 1) ',' else '\n';
+            const pos_string = try file.reader().readUntilDelimiter(buffer[0..], delimiter);
+            crab_positions[i] = try std.fmt.parseInt(u16, pos_string, 10);
+        }
     }
 
-    quickSort(crab_positions[0..]);
+    const target = average(crab_positions[0..]);
 
-    const target = crab_positions[crab_positions.len / 2];
     var total_moves: u32 = 0;
-    for (crab_positions) |pos| {
-        total_moves += if (pos < target) target - pos else pos - target;
+    {
+        for (crab_positions) |pos| {
+            const diff = if (pos < target) target - pos else pos - target;
+            var i: u32 = 1;
+            while (i <= diff):(i += 1) {
+                total_moves += i;
+            }
+        }
     }
-    std.debug.print("target is {}, total moves are {}\n", .{ target, total_moves });
+    std.debug.print("target is {}, total fuel is {}\n", .{ target, total_moves });
+}
+
+fn average(array: []u16) u16 {
+    var sum: u64 = 0;
+    for (array) |value| {
+        sum += value;
+    }
+
+    return @floatToInt(u16, @round(@intToFloat(f32, sum) / @intToFloat(f32, array.len)));
 }
 
 fn quickSort(array: []u16) void {
