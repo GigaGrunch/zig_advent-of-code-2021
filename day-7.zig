@@ -10,6 +10,9 @@ pub fn main() !void {
     var file = try std.fs.cwd().openFile(filename, .{});
     defer file.close();
 
+    var target_lower_bound: u16 = 9999;
+    var target_upper_bound: u16 = 0;
+
     var crab_positions: [input_length]u16 = undefined;
     {
         var i: usize = 0;
@@ -17,32 +20,52 @@ pub fn main() !void {
             var buffer: [4]u8 = undefined;
             const delimiter: u8 = if (i != input_length - 1) ',' else '\n';
             const pos_string = try file.reader().readUntilDelimiter(buffer[0..], delimiter);
-            crab_positions[i] = try std.fmt.parseInt(u16, pos_string, 10);
+            const pos = try std.fmt.parseInt(u16, pos_string, 10);
+            crab_positions[i] = pos;
+            target_lower_bound = @minimum(target_lower_bound, pos);
+            target_upper_bound = @maximum(target_upper_bound, pos);
         }
     }
 
-    const target = average(crab_positions[0..]);
+    var target: u16 = undefined;
+    var target_moves: u32 = undefined;
 
-    var total_moves: u32 = 0;
-    {
-        for (crab_positions) |pos| {
-            const diff = if (pos < target) target - pos else pos - target;
-            var i: u32 = 1;
-            while (i <= diff):(i += 1) {
-                total_moves += i;
+    while (true) {
+        target = (target_lower_bound + target_upper_bound) / 2;
+        target_moves = countMoves(crab_positions[0..], target);
+
+        if (target > target_lower_bound) {
+            const lower_target_moves = countMoves(crab_positions[0..], target - 1);
+            if (lower_target_moves < target_moves) {
+                target_upper_bound = target - 1;
+                continue;
             }
         }
+
+        if (target < target_upper_bound) {
+            const upper_target_moves = countMoves(crab_positions[0..], target + 1);
+            if (upper_target_moves < target_moves) {
+                target_lower_bound = target + 1;
+                continue;
+            }
+        }
+
+        break;
     }
-    std.debug.print("target is {}, total fuel is {}\n", .{ target, total_moves });
+
+    std.debug.print("target is {} with {} total moves\n", .{ target, target_moves });
 }
 
-fn average(array: []u16) u16 {
-    var sum: u64 = 0;
-    for (array) |value| {
-        sum += value;
+fn countMoves(positions: []u16, target: u16) u32 {
+    var moves: u32 = 0;
+    for (positions) |pos| {
+        const diff = if (pos < target) target - pos else pos - target;
+        var i: u32 = 1;
+        while (i <= diff):(i += 1) {
+            moves += i;
+        }
     }
-
-    return @floatToInt(u16, @round(@intToFloat(f32, sum) / @intToFloat(f32, array.len)));
+    return moves;
 }
 
 fn quickSort(array: []u16) void {
