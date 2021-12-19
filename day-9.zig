@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const use_test_input = true;
+const use_test_input = false;
 const filename = if (use_test_input) "day-9_test-input" else "day-9_real-input";
 const line_length = if (use_test_input) 10 else 100;
 const line_count = if (use_test_input) 5 else 100;
@@ -20,6 +20,8 @@ pub fn main() !void {
 
     next_line = try file.reader().readUntilDelimiter(buffers[next_buffer_index][0..], '\n');
     next_buffer_index = (next_buffer_index + 1) % buffers.len;
+
+    var low_points_sum: u32 = 0;
 
     var line_index: u8 = 0;
     while (line_index < line_count):(line_index += 1) {
@@ -48,7 +50,13 @@ pub fn main() !void {
                 if (next_line[char_index] <= char) continue;
             }
 
-            std.debug.print("found low point {c} at {}:{}\n", .{ char, char_index, line_index });
+            low_points_sum += parseInt(char) + 1;
         }
     }
+
+    std.debug.print("sum of all low points is {}\n", .{ low_points_sum });
+}
+
+fn parseInt(char: u8) u8 {
+    return char - '0';
 }
