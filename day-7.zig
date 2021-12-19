@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const use_test_input = true;
+const use_test_input = false;
 const filename = if (use_test_input) "day-7_test-input" else "day-7_real-input";
 const input_length = if (use_test_input) 10 else 1000;
 
@@ -8,6 +8,7 @@ pub fn main() !void {
     std.debug.print("--- Day 7 ---\n", .{});
 
     var file = try std.fs.cwd().openFile(filename, .{});
+    defer file.close();
 
     var crab_positions: [input_length]u16 = undefined;
     var i: usize = 0;
@@ -18,7 +19,14 @@ pub fn main() !void {
         crab_positions[i] = try std.fmt.parseInt(u16, pos_string, 10);
     }
 
-    // quickSort(crab_positions[0..]);
+    quickSort(crab_positions[0..]);
+
+    const target = crab_positions[crab_positions.len / 2];
+    var total_moves: u32 = 0;
+    for (crab_positions) |pos| {
+        total_moves += if (pos < target) target - pos else pos - target;
+    }
+    std.debug.print("target is {}, total moves are {}\n", .{ target, total_moves });
 }
 
 fn quickSort(array: []u16) void {
