@@ -68,7 +68,7 @@ fn countMoves(positions: []u16, target: u16) u32 {
     return moves;
 }
 
-fn quickSort(array: []u16) void {
+pub fn quickSort(comptime T: type, array: []T) void {
     var pivot = array.len - 1;
 
     var greater: usize = 0;
@@ -107,14 +107,14 @@ fn quickSort(array: []u16) void {
     }
 
     if (greater > 0) {
-        quickSort(array[0..greater]);
+        quickSort(T, array[0..greater]);
     }
     if (greater < array.len - 1) {
-        quickSort(array[(greater + 1)..]);
+        quickSort(T, array[(greater + 1)..]);
     }
 }
 
 test "sort" {
     var array = [_]u16 { 8, 7, 6, 1, 0, 9, 2 };
-    quickSort(array[0..]);
+    quickSort(u16, array[0..]);
 }
