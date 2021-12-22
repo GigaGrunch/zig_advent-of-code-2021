@@ -1,5 +1,4 @@
 const std = @import("std");
-const quickSort = @import("day-7.zig").quickSort;
 
 const use_test_input = false;
 const filename = if (use_test_input) "day-10_test-input" else "day-10_real-input";
@@ -13,6 +12,8 @@ pub fn main() !void {
     var line_scores = std.ArrayList(u64).init(scores_allocator.allocator());
 
     var file = try std.fs.cwd().openFile(filename, .{});
+    defer file.close();
+
     var line_index: usize = 0;
     while (line_index < line_count):(line_index += 1) {
         var buffer: [1000]u8 = undefined;
@@ -22,7 +23,7 @@ pub fn main() !void {
         var line_is_corrupted = false;
 
         var char = try file.reader().readByte();
-        while (char != '\n'):(char = try file.reader().readByte()) {
+        while (char != '\r' and char != '\n'):(char = try file.reader().readByte()) {
             var is_open_paren = true;
 
             switch (char) {
@@ -57,7 +58,9 @@ pub fn main() !void {
         }
     }
 
-    quickSort(u64, line_scores.items);
+    if (line_scores.items.len == 0) unreachable;
+
+    quickSort(line_scores.items);
     const middle_score = line_scores.items[line_scores.items.len / 2];
 
     std.debug.print("middle score is {}\n", .{ middle_score });
@@ -71,4 +74,55 @@ fn getPoints(char: u8) u64 {
         '>' => 4,
         else => unreachable
     };
+}
+
+fn quickSort(array: []u64) void {
+    var pivot = array.len - 1;
+
+    var greater: usize = 0;
+    var smaller: usize = 0;
+
+    while (true) {
+        while (greater < pivot):(greater += 1) {
+            if (array[greater] > array[pivot]) {
+                break;
+            }
+        }
+
+        if (smaller < greater) {
+            smaller = greater;
+        }
+
+        while (smaller < pivot):(smaller += 1) {
+            if (array[smaller] < array[pivot]) {
+                break;
+            }
+        }
+
+        if (greater == pivot or smaller == pivot) {
+            break;
+        }
+
+        const tmp = array[greater];
+        array[greater] = array[smaller];
+        array[smaller] = tmp;
+    }
+
+    {
+        const tmp = array[greater];
+        array[greater] = array[pivot];
+        array[pivot] = tmp;
+    }
+
+    if (greater > 0) {
+        quickSort(array[0..greater]);
+    }
+    if (greater < array.len - 1) {
+        quickSort(array[(greater + 1)..]);
+    }
+}
+
+test "sort" {
+    var array = [_]u64 { 8, 7, 6, 1, 0, 9, 2 };
+    quickSort(array[0..]);
 }
