@@ -23,12 +23,28 @@ pub fn main() !void {
     }
 
     std.debug.print("initial grid:\n", .{});
-    {
-        var i: usize = 0;
-        while (i < edge_length):(i += 1) {
-            const start = i * edge_length;
-            const end = start + edge_length;
-            std.debug.print("{s}\n", .{ grid[start..end] });
+    printGrid(grid[0..]);
+
+    var iteration: u32 = 0;
+    while (iteration < 100):(iteration += 1) {
+        var flash_buffer: [1000]u8 = undefined;
+        var flash_allocator = std.heap.FixedBufferAllocator.init(flash_buffer[0..]);
+        var flash_indices = std.ArrayList(usize).init(flash_allocator.allocator());
+
+        for (grid) |*value, i| {
+            value.* += 1;
+            if (value.* > 9) {
+                try flash_indices.append(i);
+            }
         }
+    }
+}
+
+fn printGrid(grid: []u8) void {
+    var i: usize = 0;
+    while (i < edge_length):(i += 1) {
+        const start = i * edge_length;
+        const end = start + edge_length;
+        std.debug.print("{s}\n", .{ grid[start..end] });
     }
 }
