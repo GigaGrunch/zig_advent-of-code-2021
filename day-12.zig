@@ -15,6 +15,7 @@ fn execute(input: []const u8) !u32 {
 
     var small_caves = std.ArrayList([]const u8).init(alloc.allocator());
     var large_caves = std.ArrayList([]const u8).init(alloc.allocator());
+    var connections = std.ArrayList(Connection).init(alloc.allocator());
 
     var line_it = std.mem.split(u8, input, "\n");
     while (line_it.next()) |line| {
@@ -35,6 +36,12 @@ fn execute(input: []const u8) !u32 {
             .Large => try addUnique(&large_caves, to_cave),
             else => { }
         }
+
+        const connection = Connection {
+            .from = from_cave,
+            .to = to_cave,
+        };
+        try connections.append(connection);
     }
 
     std.debug.print("small caves: ", .{});
@@ -46,6 +53,12 @@ fn execute(input: []const u8) !u32 {
     std.debug.print("large caves: ", .{});
     for (large_caves.items) |cave| {
         std.debug.print("{s} ", .{ cave });
+    }
+    std.debug.print("\n", .{});
+
+    std.debug.print("connections:\n", .{});
+    for (connections.items) |connection| {
+        std.debug.print("{s} <-> {s}\n", .{ connection.from, connection.to });
     }
     std.debug.print("\n", .{});
 
@@ -74,7 +87,7 @@ const CaveType = enum {
     Large,
 };
 
-const Path = struct {
+const Connection = struct {
     from: []const u8,
     to: []const u8,
 };
