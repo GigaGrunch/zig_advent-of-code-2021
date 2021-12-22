@@ -35,6 +35,7 @@ pub fn main() !void {
         for (grid) |*value, i| {
             value.* += 1;
             if (value.* > 9) {
+                value.* = 100;
                 try flash_indices.append(i);
             }
         }
@@ -59,9 +60,10 @@ pub fn main() !void {
                     if (y < 0 or y >= edge_length) continue;
 
                     const i = getIndex(x, y);
-                    if (grid[i] != 200) {
+                    if (grid[i] < 100) {
                         grid[i] += 1;
                         if (grid[i] > 9) {
+                            grid[i] = 100;
                             try flash_indices.append(i);
                         }
                     }
