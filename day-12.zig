@@ -1,53 +1,39 @@
 const std = @import("std");
 
-const input: enum {
-    Test1,
-    Test2,
-    Test3,
-    Real,
-} = .Test1;
-const filename = switch (input) {
-    .Test1 => "day-12_test-input-1",
-    else => unreachable
-};
-const path_count = switch (input) {
-    .Test1 => 7,
-    else => unreachable
-};
-const cavename_length = switch (input) {
-    .Test1 => 1,
-    else => unreachable
-};
+const real_input = @embedFile("day-12_real-input");
+const test_input_1 = @embedFile("day-12_test-input-1");
 
 pub fn main() !void {
     std.debug.print("--- Day 12 ---\n", .{});
+    var result = try execute(real_input);
+    std.debug.print("there are {} paths\n", .{ result });
+}
 
-    var file = try std.fs.cwd().openFile(filename, .{});
-    defer file.close();
-
+fn execute(input: []const u8) !u32 {
     var alloc_buffer: [1024 * 1024]u8 = undefined;
     var alloc = std.heap.FixedBufferAllocator.init(alloc_buffer[0..]);
 
-    var small_caves = std.ArrayList([cavename_length]u8).init(alloc.allocator());
-    var large_caves = std.ArrayList([cavename_length]u8).init(alloc.allocator());
-    {
-        var cave_buffer: [100]u8 = undefined;
-        var path_index: u32 = 0;
-        while (path_index < path_count):(path_index += 1) {
-            const from_cave = try file.reader().readUntilDelimiter(cave_buffer[0..], '-');
-            switch (getCaveType(from_cave)) {
-                .Small => try addUnique(&small_caves, from_cave),
-                .Large => try addUnique(&large_caves, from_cave),
-                else => { }
-            }
+    var small_caves = std.ArrayList([]const u8).init(alloc.allocator());
+    var large_caves = std.ArrayList([]const u8).init(alloc.allocator());
 
-            const to_cave_untrimmed = try file.reader().readUntilDelimiter(cave_buffer[0..], '\n');
-            const to_cave = std.mem.trimRight(u8, to_cave_untrimmed, "\r");
-            switch (getCaveType(to_cave)) {
-                .Small => try addUnique(&small_caves, to_cave),
-                .Large => try addUnique(&large_caves, to_cave),
-                else => { }
-            }
+    var line_it = std.mem.split(u8, input, "\n");
+    while (line_it.next()) |line| {
+        if (line.len == 0) break;
+
+        var cave_it = std.mem.split(u8, line, "-");
+
+        const from_cave = cave_it.next() orelse unreachable;
+        switch (getCaveType(from_cave)) {
+            .Small => try addUnique(&small_caves, from_cave),
+            .Large => try addUnique(&large_caves, from_cave),
+            else => { }
+        }
+
+        const to_cave = cave_it.next() orelse unreachable;
+        switch (getCaveType(to_cave)) {
+            .Small => try addUnique(&small_caves, to_cave),
+            .Large => try addUnique(&large_caves, to_cave),
+            else => { }
         }
     }
 
@@ -62,16 +48,15 @@ pub fn main() !void {
         std.debug.print("{s} ", .{ cave });
     }
     std.debug.print("\n", .{});
+
+    return 0;
 }
 
-fn addUnique(list: *std.ArrayList([cavename_length]u8), cave: []const u8) !void {
+fn addUnique(list: *std.ArrayList([]const u8), cave: []const u8) !void {
     for (list.items) |item| {
         if (std.mem.eql(u8, cave, item[0..])) return;
     }
-
-    var copy: [cavename_length]u8 = undefined;
-    std.mem.copy(u8, copy[0..], cave);
-    try list.append(copy);
+    try list.append(cave);
 }
 
 fn getCaveType(cave: []const u8) CaveType {
@@ -93,3 +78,10 @@ const Path = struct {
     from: []const u8,
     to: []const u8,
 };
+
+test "test-input-1" {
+    std.debug.print("\n", .{});
+    const result = try execute(test_input_1);
+    const expected: u32 = 10;
+    try std.testing.expectEqual(expected, result);
+}
