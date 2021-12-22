@@ -17,7 +17,7 @@ pub fn main() !void {
             grid[i] = try file.reader().readByte();
 
             if (i % edge_length == edge_length - 1) {
-                try file.reader().skipBytes(1, .{});
+                try file.reader().skipUntilDelimiterOrEof('\n');
             }
         }
     }
