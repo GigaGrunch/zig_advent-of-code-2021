@@ -12,7 +12,7 @@ pub fn main() !void {
 }
 
 fn execute(input: []const u8) !u32 {
-    var alloc_buffer: [2 * 1024 * 1024]u8 = undefined;
+    var alloc_buffer: [1024 * 1024]u8 = undefined;
     var alloc = std.heap.FixedBufferAllocator.init(alloc_buffer[0..]);
 
     var small_caves = std.ArrayList([]const u8).init(alloc.allocator());
@@ -91,6 +91,7 @@ fn continuePath(path: std.ArrayList(Cave), connections: []Connection) PathError!
         try sub_path.appendSlice(path.items);
         try sub_path.append(connection.to);
         sub_paths += try continuePath(sub_path, connections);
+        sub_path.deinit();
     }
 
     return sub_paths;
