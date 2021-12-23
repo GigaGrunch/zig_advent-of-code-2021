@@ -2,6 +2,8 @@ const std = @import("std");
 
 const real_input = @embedFile("day-12_real-input");
 const test_input_1 = @embedFile("day-12_test-input-1");
+const test_input_2 = @embedFile("day-12_test-input-2");
+const test_input_3 = @embedFile("day-12_test-input-3");
 
 pub fn main() !void {
     std.debug.print("--- Day 12 ---\n", .{});
@@ -72,14 +74,7 @@ fn getCaveType(cave: []const u8) CaveType {
 fn continuePath(path: std.ArrayList(Cave), connections: []Connection) PathError!u32 {
     const pos = path.items[path.items.len - 1];
 
-    if (getCaveType(pos) == .End) {
-        for (path.items) |cave, i| {
-            if (i != 0) std.debug.print(" -> ", .{});
-            std.debug.print("{s}", .{ cave });
-        }
-        std.debug.print("\n", .{});
-        return 1;
-    }
+    if (getCaveType(pos) == .End) return 1;
 
     var sub_paths: u32 = 0;
 
@@ -128,8 +123,19 @@ const Connection = struct {
 };
 
 test "test-input-1" {
-    std.debug.print("\n", .{});
     const result = try execute(test_input_1);
     const expected: u32 = 10;
+    try std.testing.expectEqual(expected, result);
+}
+
+test "test-input-2" {
+    const result = try execute(test_input_2);
+    const expected: u32 = 19;
+    try std.testing.expectEqual(expected, result);
+}
+
+test "test-input-3" {
+    const result = try execute(test_input_3);
+    const expected: u32 = 226;
     try std.testing.expectEqual(expected, result);
 }
