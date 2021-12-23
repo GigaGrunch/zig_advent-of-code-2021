@@ -42,6 +42,11 @@ fn execute(input: []const u8) !u32 {
             .to = to_cave,
         };
         try connections.append(connection);
+        const reverse = Connection {
+            .from = to_cave,
+            .to = from_cave,
+        };
+        try connections.append(reverse);
     }
 
     std.debug.print("small caves: ", .{});
@@ -58,7 +63,7 @@ fn execute(input: []const u8) !u32 {
 
     std.debug.print("connections:\n", .{});
     for (connections.items) |connection| {
-        std.debug.print("{s} <-> {s}\n", .{ connection.from, connection.to });
+        std.debug.print("{s} -> {s}\n", .{ connection.from, connection.to });
     }
     std.debug.print("\n", .{});
 
