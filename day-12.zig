@@ -49,41 +49,71 @@ fn execute(input: []const u8) !u32 {
         try connections.append(reverse);
     }
 
-    std.debug.print("small caves: ", .{});
-    for (small_caves.items) |cave| {
-        std.debug.print("{s} ", .{ cave });
-    }
-    std.debug.print("\n", .{});
+    var initial_path = std.ArrayList(Cave).init(alloc.allocator());
+    try initial_path.append("start");
+    const path_count = try continuePath(initial_path, connections.items);
 
-    std.debug.print("large caves: ", .{});
-    for (large_caves.items) |cave| {
-        std.debug.print("{s} ", .{ cave });
-    }
-    std.debug.print("\n", .{});
-
-    std.debug.print("connections:\n", .{});
-    for (connections.items) |connection| {
-        std.debug.print("{s} -> {s}\n", .{ connection.from, connection.to });
-    }
-    std.debug.print("\n", .{});
-
-    return 0;
+    return path_count;
 }
 
-fn addUnique(list: *std.ArrayList([]const u8), cave: []const u8) !void {
-    for (list.items) |item| {
-        if (std.mem.eql(u8, cave, item[0..])) return;
-    }
+fn addUnique(list: *std.ArrayList(Cave), cave: Cave) !void {
+    if (contains(list.items, cave)) return;
     try list.append(cave);
 }
 
 fn getCaveType(cave: []const u8) CaveType {
-    if (std.mem.eql(u8, cave, "start")) return .Start;
-    if (std.mem.eql(u8, cave, "end")) return .End;
+    if (equals(cave, "start")) return .Start;
+    if (equals(cave, "end")) return .End;
     if (cave[0] >= 'A' and cave[0] <= 'Z') return .Large;
     if (cave[0] >= 'a' and cave[0] <= 'z') return .Small;
     unreachable;
 }
+
+fn continuePath(path: std.ArrayList(Cave), connections: []Connection) PathError!u32 {
+    const pos = path.items[path.items.len - 1];
+
+    if (getCaveType(pos) == .End) {
+        for (path.items) |cave, i| {
+            if (i != 0) std.debug.print(" -> ", .{});
+            std.debug.print("{s}", .{ cave });
+        }
+        std.debug.print("\n", .{});
+        return 1;
+    }
+
+    var sub_paths: u32 = 0;
+
+    for (connections) |connection| {
+        if (!equals(connection.from, pos)) continue;
+
+        switch (getCaveType(connection.to)) {
+            .Start => continue,
+            .Small => if (contains(path.items, connection.to)) continue,
+            else => { }
+        }
+
+        var sub_path = try std.ArrayList(Cave).initCapacity(path.allocator, path.items.len + 1);
+        try sub_path.appendSlice(path.items);
+        try sub_path.append(connection.to);
+        sub_paths += try continuePath(sub_path, connections);
+    }
+
+    return sub_paths;
+}
+
+const PathError = @typeInfo(@typeInfo(@TypeOf(std.ArrayListAligned([]const u8,null).initCapacity)).Fn.return_type.?).ErrorUnion.error_set;
+
+fn contains(haystack: []Cave, needle: Cave) bool {
+    return for (haystack) |cave| {
+        if (equals(cave, needle)) break true;
+    } else false;
+}
+
+fn equals(lhs: Cave, rhs: Cave) bool {
+    return std.mem.eql(u8, lhs, rhs);
+}
+
+const Cave = []const u8;
 
 const CaveType = enum {
     Start,
@@ -93,8 +123,8 @@ const CaveType = enum {
 };
 
 const Connection = struct {
-    from: []const u8,
-    to: []const u8,
+    from: Cave,
+    to: Cave,
 };
 
 test "test-input-1" {
