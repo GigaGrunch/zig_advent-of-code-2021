@@ -40,19 +40,62 @@ fn execute(input: []const u8) !u32 {
         }
     }
 
-    for (points.items) |point| {
-        std.debug.print("({},{}) ", .{ point.x, point.y });
-    }
-    std.debug.print("\n", .{});
-
     for (folds.items) |fold| {
+        var removed_points = std.ArrayList(usize).init(alloc.allocator());
+        var new_points = std.ArrayList(Point).init(alloc.allocator());
+
         switch (fold.direction) {
-            .Vertical => std.debug.print("fold along vertical line x={}\n", .{ fold.value }),
-            .Horizontal => std.debug.print("fold along horizontal line y={}\n", .{ fold.value }),
+            .Vertical => {
+                for (points.items) |point, i| {
+                    if (point.x < fold.value) continue;
+                    const distance = point.x - fold.value;
+
+                    try new_points.append(.{
+                        .x = fold.value - distance,
+                        .y = point.y,
+                    });
+                    try removed_points.append(i);
+                }
+            },
+            .Horizontal => {
+                for (points.items) |point, i| {
+                    if (point.y < fold.value) continue;
+                    const distance = point.y - fold.value;
+
+                    try new_points.append(.{
+                        .x = point.x,
+                        .y = fold.value - distance,
+                    });
+                    try removed_points.append(i);
+                }
+            },
         }
+
+        std.mem.reverse(usize, removed_points.items);
+        for (removed_points.items) |i| {
+            _ = points.swapRemove(i);
+        }
+        for (new_points.items) |point| {
+            if (!contains(points.items, point)) {
+                try points.append(point);
+            }
+        }
+
+        break;
     }
 
-    return 0;
+    return @intCast(u32, points.items.len);
+}
+
+fn addUnique(points: *std.ArrayList(Point), point: Point) !void {
+    if (contains(points.items, point)) return;
+    try points.append(point);
+}
+
+fn contains(haystack: []Point, needle: Point) bool {
+    return for (haystack) |point| {
+        if (point.x == needle.x and point.y == needle.y) break true;
+    } else false;
 }
 
 const Point = struct {
@@ -66,7 +109,6 @@ const Fold = struct {
 };
 
 test "test-input" {
-    std.debug.print("\n", .{});
     const expected: u32 = 17;
     const result = try execute(test_input);
     try std.testing.expectEqual(expected, result);
