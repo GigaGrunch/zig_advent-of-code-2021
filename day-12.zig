@@ -17,7 +17,7 @@ fn execute(input: []const u8) !u32 {
     var large_caves = std.ArrayList([]const u8).init(alloc.allocator());
     var connections = std.ArrayList(Connection).init(alloc.allocator());
 
-    var line_it = std.mem.split(u8, input, "\n");
+    var line_it = std.mem.tokenize(u8, input, "\r\n");
     while (line_it.next()) |line| {
         if (line.len == 0) break;
 
@@ -30,8 +30,7 @@ fn execute(input: []const u8) !u32 {
             else => { }
         }
 
-        const to_cave_untrimmed = cave_it.next() orelse unreachable;
-        const to_cave = std.mem.trim(u8, to_cave_untrimmed, "\r");
+        const to_cave = cave_it.next() orelse unreachable;
         switch (getCaveType(to_cave)) {
             .Small => try addUnique(&small_caves, to_cave),
             .Large => try addUnique(&large_caves, to_cave),
