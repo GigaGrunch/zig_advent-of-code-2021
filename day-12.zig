@@ -8,11 +8,11 @@ const test_input_3 = @embedFile("day-12_test-input-3");
 pub fn main() !void {
     std.debug.print("--- Day 12 ---\n", .{});
     var result = try execute(real_input);
-    std.debug.print("there are {} paths\n", .{ result });
+    std.debug.print("there are {} distinct paths\n", .{ result });
 }
 
 fn execute(input: []const u8) !u32 {
-    var alloc_buffer: [1024 * 1024]u8 = undefined;
+    var alloc_buffer: [2 * 1024 * 1024]u8 = undefined;
     var alloc = std.heap.FixedBufferAllocator.init(alloc_buffer[0..]);
 
     var small_caves = std.ArrayList([]const u8).init(alloc.allocator());
