@@ -30,7 +30,8 @@ fn execute(input: []const u8) !u32 {
             else => { }
         }
 
-        const to_cave = cave_it.next() orelse unreachable;
+        const to_cave_untrimmed = cave_it.next() orelse unreachable;
+        const to_cave = std.mem.trim(u8, to_cave_untrimmed, "\r");
         switch (getCaveType(to_cave)) {
             .Small => try addUnique(&small_caves, to_cave),
             .Large => try addUnique(&large_caves, to_cave),
