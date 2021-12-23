@@ -16,6 +16,9 @@ fn execute(input: []const u8) !u32 {
     var points = std.ArrayList(Point).init(alloc.allocator());
     var folds = std.ArrayList(Fold).init(alloc.allocator());
 
+    var max_x: u16 = 0;
+    var max_y: u16 = 0;
+
     var line_it = std.mem.tokenize(u8, input, "\r\n");
     while (line_it.next()) |line| {
         if (std.mem.startsWith(u8, line, "fold")) {
@@ -33,10 +36,14 @@ fn execute(input: []const u8) !u32 {
             var coords_it = std.mem.tokenize(u8, line, ",");
             const x_string = coords_it.next() orelse unreachable;
             const y_string = coords_it.next() orelse unreachable;
+            const x = try std.fmt.parseInt(u16, x_string, 10);
+            const y = try std.fmt.parseInt(u16, y_string, 10);
             try points.append(.{
-                .x = try std.fmt.parseInt(u16, x_string, 10),
-                .y = try std.fmt.parseInt(u16, y_string, 10),
+                .x = x,
+                .y = y,
             });
+            max_x = @maximum(max_x, x);
+            max_y = @maximum(max_y, y);
         }
     }
 
@@ -56,6 +63,8 @@ fn execute(input: []const u8) !u32 {
                     });
                     try removed_points.append(i);
                 }
+
+                max_x /= 2;
             },
             .Horizontal => {
                 for (points.items) |point, i| {
@@ -68,6 +77,8 @@ fn execute(input: []const u8) !u32 {
                     });
                     try removed_points.append(i);
                 }
+
+                max_y /= 2;
             },
         }
 
@@ -80,8 +91,19 @@ fn execute(input: []const u8) !u32 {
                 try points.append(point);
             }
         }
+    }
 
-        break;
+    {
+        var y: u16 = 0;
+        while (y < max_y):(y += 1) {
+            var x: u16 = 0;
+            while (x < max_x):(x += 1) {
+                const point = Point { .x = x, .y = y };
+                if (contains(points.items, point)) std.debug.print("#", .{})
+                else std.debug.print(".", .{});
+            }
+            std.debug.print("\n", .{});
+        }
     }
 
     return @intCast(u32, points.items.len);
@@ -109,7 +131,8 @@ const Fold = struct {
 };
 
 test "test-input" {
-    const expected: u32 = 17;
+    std.debug.print("\n", .{});
+    const expected: u32 = 16;
     const result = try execute(test_input);
     try std.testing.expectEqual(expected, result);
 }
