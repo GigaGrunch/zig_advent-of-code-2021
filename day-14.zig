@@ -5,17 +5,17 @@ const test_input = @embedFile("day-14_test-input");
 
 pub fn main() !void {
     std.debug.print("--- Day 14 ---\n", .{});
-    const result = try execute(real_input);
+    const result = try execute(real_input, 10);
     std.debug.print("most common - least common = {}\n", .{ result });
 }
 
 test "test-input" {
-    const expected: u32 = 1588;
-    const result = try execute(test_input);
+    const expected: u64 = 1588;
+    const result = try execute(test_input, 10);
     try std.testing.expectEqual(expected, result);
 }
 
-fn execute(input: []const u8) !u32 {
+fn execute(input: []const u8, iterations: u32) !u64 {
     var buffer: [1024 * 1024]u8 = undefined;
     var alloc = std.heap.FixedBufferAllocator.init(buffer[0..]);
 
@@ -42,7 +42,7 @@ fn execute(input: []const u8) !u32 {
     try string.appendSlice(template);
 
     var iteration: u32 = 1;
-    while (iteration <= 10):(iteration += 1) {
+    while (iteration <= iterations):(iteration += 1) {
         var lastString = try std.ArrayList(u8).initCapacity(alloc.allocator(), string.items.len);
         try lastString.appendSlice(string.items);
         defer lastString.deinit();
@@ -78,8 +78,8 @@ fn execute(input: []const u8) !u32 {
         }
     }
 
-    var least_common: u32 = std.math.maxInt(u32);
-    var most_common: u32 = 0;
+    var least_common: u64 = std.math.maxInt(u64);
+    var most_common: u64 = 0;
     for (element_counts.items) |item| {
         if (item.count > most_common) {
             most_common = item.count;
@@ -101,5 +101,5 @@ const Rule = struct {
 
 const ElementCount = struct {
     element: u8,
-    count: u32,
+    count: u64,
 };
