@@ -10,11 +10,18 @@ pub fn main() !void {
 }
 
 test "test-input" {
+    std.debug.print("\n", .{});
     const expected: u32 = 1588;
     const result = try execute(test_input);
     try std.testing.expectEqual(expected, result);
 }
 
 fn execute(input: []const u8) !u32 {
+    var line_it = std.mem.tokenize(u8, input, "\r\n");
+    
+    const template = line_it.next() orelse unreachable;
+
+    std.debug.print("template: {s}\n", .{ template });
+
     return @intCast(u32, input.len);
 }
