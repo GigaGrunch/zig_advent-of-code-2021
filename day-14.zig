@@ -10,7 +10,6 @@ pub fn main() !void {
 }
 
 test "test-input" {
-    std.debug.print("\n", .{});
     const expected: u32 = 1588;
     const result = try execute(test_input);
     try std.testing.expectEqual(expected, result);
@@ -42,10 +41,8 @@ fn execute(input: []const u8) !u32 {
     var string = std.ArrayList(u8).init(alloc.allocator());
     try string.appendSlice(template);
 
-    std.debug.print("template:    {s}\n", .{ template });
-
     var iteration: u32 = 1;
-    while (iteration <= 4):(iteration += 1) {
+    while (iteration <= 10):(iteration += 1) {
         var lastString = try std.ArrayList(u8).initCapacity(alloc.allocator(), string.items.len);
         try lastString.appendSlice(string.items);
         defer lastString.deinit();
@@ -64,15 +61,45 @@ fn execute(input: []const u8) !u32 {
                 }
             }
         }
-
-        std.debug.print("iteration {d}: {s}\n", .{ iteration,  string.items });
     }
 
-    return @intCast(u32, input.len);
+    var element_counts = std.ArrayList(ElementCount).init(alloc.allocator());
+    for (string.items) |char| {
+        if (!for (element_counts.items) |*item| {
+            if (item.element == char) {
+                item.count += 1;
+                break true;
+            }
+        } else false) {
+            try element_counts.append(.{
+                .element = char,
+                .count = 1,
+            });
+        }
+    }
+
+    var least_common: u32 = std.math.maxInt(u32);
+    var most_common: u32 = 0;
+    for (element_counts.items) |item| {
+        if (item.count > most_common) {
+            most_common = item.count;
+        }
+        if (item.count < least_common) {
+            least_common = item.count;
+        }
+    }
+
+    const result = most_common - least_common;
+    return result;
 }
 
 const Rule = struct {
     lhs: u8,
     rhs: u8,
     insert: u8,
+};
+
+const ElementCount = struct {
+    element: u8,
+    count: u32,
 };
