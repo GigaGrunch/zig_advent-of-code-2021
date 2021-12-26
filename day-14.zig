@@ -23,83 +23,106 @@ fn execute(input: []const u8, iterations: u32) !u64 {
 
     const template = line_it.next() orelse unreachable;
     var rules = std.ArrayList(Rule).init(alloc.allocator());
+    var elements = std.ArrayList(ElementCount).init(alloc.allocator());
 
     while (line_it.next()) |line| {
         if (line.len == 0) continue;
 
         var rule_it = std.mem.tokenize(u8, line, " ->");
-        const pair = rule_it.next() orelse unreachable;
+        const pair_string = rule_it.next() orelse unreachable;
         const insert = rule_it.next() orelse unreachable;
 
+        const pair = Pair { .lhs = pair_string[0], .rhs = pair_string[1], };
         try rules.append(.{
-            .lhs = pair[0],
-            .rhs = pair[1],
+            .pair = pair,
             .insert = insert[0],
         });
+
+        var lhs_known = false;
+        var rhs_known = false;
+        for (elements.items) |element| {
+            if (element.char == pair.lhs) lhs_known = true;
+            if (element.char == pair.rhs) rhs_known = true;
+        }
+        if (!lhs_known) try elements.append(.{ .char = pair.lhs });
+        if (!rhs_known) try elements.append(.{ .char = pair.rhs });
     }
 
-    var string = std.ArrayList(u8).init(alloc.allocator());
-    try string.appendSlice(template);
-
-    var iteration: u32 = 1;
-    while (iteration <= iterations):(iteration += 1) {
-        var lastString = try std.ArrayList(u8).initCapacity(alloc.allocator(), string.items.len);
-        try lastString.appendSlice(string.items);
-        defer lastString.deinit();
-
-        string.clearRetainingCapacity();
-
-        for (lastString.items) |char, i| {
-            try string.append(char);
-
-            if (i < lastString.items.len - 1) {
-                for (rules.items) |rule| {
-                    if (rule.lhs == char and rule.rhs == lastString.items[i + 1]) {
-                        try string.append(rule.insert);
-                        break;
-                    }
+    var pairs = std.ArrayList(Pair).init(alloc.allocator());
+    {
+        for (template) |char, i| {
+            for (elements.items) |*element| {
+                if (element.char == char) {
+                    element.count += 1;
+                    break;
                 }
+            }
+
+            if (i < template.len - 1) {
+                try pairs.append(.{
+                    .lhs = template[i],
+                    .rhs = template[i + 1],
+                });
             }
         }
     }
 
-    var element_counts = std.ArrayList(ElementCount).init(alloc.allocator());
-    for (string.items) |char| {
-        if (!for (element_counts.items) |*item| {
-            if (item.element == char) {
-                item.count += 1;
-                break true;
+    while (pairs.items.len > 0) {
+        const pair = pairs.pop();
+
+        for (rules.items) |rule| {
+            if (rule.pair.equals(pair)) {
+                for (elements.items) |*element| {
+                    if (element.char == rule.insert) {
+                        element.count += 1;
+                        break;
+                    }
+                }
+
+                const iteration = pair.iteration + 1;
+                if (iteration < iterations) {
+                    try pairs.append(.{
+                        .lhs = pair.lhs,
+                        .rhs = rule.insert,
+                        .iteration = iteration,
+                    });
+                    try pairs.append(.{
+                        .lhs = rule.insert,
+                        .rhs = pair.rhs,
+                        .iteration = iteration,
+                    });
+                }
+                break;
             }
-        } else false) {
-            try element_counts.append(.{
-                .element = char,
-                .count = 1,
-            });
         }
     }
 
     var least_common: u64 = std.math.maxInt(u64);
     var most_common: u64 = 0;
-    for (element_counts.items) |item| {
-        if (item.count > most_common) {
-            most_common = item.count;
-        }
-        if (item.count < least_common) {
-            least_common = item.count;
-        }
+    for (elements.items) |element| {
+        if (element.count < least_common) least_common = element.count;
+        if (element.count > most_common) most_common = element.count;
     }
-
-    const result = most_common - least_common;
-    return result;
+    
+    return most_common - least_common;
 }
 
-const Rule = struct {
-    lhs: u8,
-    rhs: u8,
-    insert: u8,
+const ElementCount = struct {
+    char: u8 = 0,
+    count: u64 = 0,
 };
 
-const ElementCount = struct {
-    element: u8,
-    count: u64,
+const Pair = struct {
+    lhs: u8,
+    rhs: u8,
+    iteration: u32 = 0,
+
+    pub fn equals(lhs: Pair, rhs: Pair) bool {
+        return lhs.lhs == rhs.lhs and lhs.rhs == rhs.rhs;
+    }
+};
+
+const Rule = struct {
+    pair: Pair,
+    insert: u8,
 };
