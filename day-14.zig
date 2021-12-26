@@ -42,9 +42,10 @@ fn execute(input: []const u8) !u32 {
     var string = std.ArrayList(u8).init(alloc.allocator());
     try string.appendSlice(template);
 
-    while (true) {
-        var appliedAnyRule = false;
+    std.debug.print("template:    {s}\n", .{ template });
 
+    var iteration: u32 = 1;
+    while (iteration <= 4):(iteration += 1) {
         var lastString = try std.ArrayList(u8).initCapacity(alloc.allocator(), string.items.len);
         try lastString.appendSlice(string.items);
         defer lastString.deinit();
@@ -64,8 +65,7 @@ fn execute(input: []const u8) !u32 {
             }
         }
 
-        std.debug.print("{s}\n", .{ string.items });
-        if (!appliedAnyRule) break;
+        std.debug.print("iteration {d}: {s}\n", .{ iteration,  string.items });
     }
 
     return @intCast(u32, input.len);
