@@ -48,52 +48,20 @@ fn execute(input: []const u8, iterations: u32) !u64 {
         if (!rhs_known) try elements.append(.{ .char = pair.rhs });
     }
 
-    var pairs = std.ArrayList(Pair).init(alloc.allocator());
-    {
-        for (template) |char, i| {
-            for (elements.items) |*element| {
-                if (element.char == char) {
-                    element.count += 1;
-                    break;
-                }
-            }
-
-            if (i < template.len - 1) {
-                try pairs.append(.{
-                    .lhs = template[i],
-                    .rhs = template[i + 1],
-                });
-            }
-        }
-    }
-
-    while (pairs.items.len > 0) {
-        const pair = pairs.pop();
-
-        for (rules.items) |rule| {
-            if (rule.pair.equals(pair)) {
-                for (elements.items) |*element| {
-                    if (element.char == rule.insert) {
-                        element.count += 1;
-                        break;
-                    }
-                }
-
-                const iteration = pair.iteration + 1;
-                if (iteration < iterations) {
-                    try pairs.append(.{
-                        .lhs = pair.lhs,
-                        .rhs = rule.insert,
-                        .iteration = iteration,
-                    });
-                    try pairs.append(.{
-                        .lhs = rule.insert,
-                        .rhs = pair.rhs,
-                        .iteration = iteration,
-                    });
-                }
+    for (template) |char, i| {
+        for (elements.items) |*element| {
+            if (element.char == char) {
+                element.count += 1;
                 break;
             }
+        }
+
+        if (i < template.len - 1) {
+            recursePair(elements.items, rules.items, .{
+                .lhs = template[i],
+                .rhs = template[i + 1],
+                .remaining_iterations = iterations,
+            });
         }
     }
 
@@ -107,6 +75,33 @@ fn execute(input: []const u8, iterations: u32) !u64 {
     return most_common - least_common;
 }
 
+fn recursePair(elements: []ElementCount, rules: []Rule, pair: Pair) void {
+    const insert = for (rules) |rule| {
+        if (rule.pair.equals(pair)) break rule.insert;
+    } else unreachable;
+
+    for (elements) |*element| {
+        if (element.char == insert) {
+            element.count += 1;
+            break;
+        }
+    }
+
+    const remaining_iterations = pair.remaining_iterations - 1;
+    if (remaining_iterations == 0) return;
+
+    recursePair(elements, rules, .{
+        .lhs = pair.lhs,
+        .rhs = insert,
+        .remaining_iterations = remaining_iterations,
+    });
+    recursePair(elements, rules, .{
+        .lhs = insert,
+        .rhs = pair.rhs,
+        .remaining_iterations = remaining_iterations,
+    });
+}
+
 const ElementCount = struct {
     char: u8 = 0,
     count: u64 = 0,
@@ -115,7 +110,7 @@ const ElementCount = struct {
 const Pair = struct {
     lhs: u8,
     rhs: u8,
-    iteration: u32 = 0,
+    remaining_iterations: u32 = 0,
 
     pub fn equals(lhs: Pair, rhs: Pair) bool {
         return lhs.lhs == rhs.lhs and lhs.rhs == rhs.rhs;
