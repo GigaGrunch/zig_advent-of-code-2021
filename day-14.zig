@@ -21,35 +21,58 @@ fn execute(input: []const u8) !u32 {
     var alloc = std.heap.FixedBufferAllocator.init(buffer[0..]);
 
     var line_it = std.mem.tokenize(u8, input, "\r\n");
-    const template = line_it.next() orelse unreachable;
-    std.debug.print("template: {s}\n", .{ template });
 
+    const template = line_it.next() orelse unreachable;
     var rules = std.ArrayList(Rule).init(alloc.allocator());
 
     while (line_it.next()) |line| {
         if (line.len == 0) continue;
 
         var rule_it = std.mem.tokenize(u8, line, " ->");
-        const inPair = rule_it.next() orelse unreachable;
-        const outChar = rule_it.next() orelse unreachable;
+        const pair = rule_it.next() orelse unreachable;
+        const insert = rule_it.next() orelse unreachable;
 
         try rules.append(.{
-            .inPair = inPair,
-            .outChar = outChar[0],
+            .lhs = pair[0],
+            .rhs = pair[1],
+            .insert = insert[0],
         });
     }
 
-    for (rules.items) |rule| {
-        std.debug.print("{s} -> {c}\n", .{ rule.inPair, rule.outChar });
-    }
+    var string = std.ArrayList(u8).init(alloc.allocator());
+    try string.appendSlice(template);
 
-    // var string = std.ArrayList(u8).init(alloc.allocator());
-    // try string.appendSlice(template);
+    while (true) {
+        var appliedAnyRule = false;
+
+        var lastString = try std.ArrayList(u8).initCapacity(alloc.allocator(), string.items.len);
+        try lastString.appendSlice(string.items);
+        defer lastString.deinit();
+
+        string.clearRetainingCapacity();
+
+        for (lastString.items) |char, i| {
+            try string.append(char);
+
+            if (i < lastString.items.len - 1) {
+                for (rules.items) |rule| {
+                    if (rule.lhs == char and rule.rhs == lastString.items[i + 1]) {
+                        try string.append(rule.insert);
+                        break;
+                    }
+                }
+            }
+        }
+
+        std.debug.print("{s}\n", .{ string.items });
+        if (!appliedAnyRule) break;
+    }
 
     return @intCast(u32, input.len);
 }
 
 const Rule = struct {
-    inPair: []const u8,
-    outChar: u8,
+    lhs: u8,
+    rhs: u8,
+    insert: u8,
 };
