@@ -23,8 +23,8 @@ fn execute(input: []const u8, iterations: u32) !u64 {
     var line_it = std.mem.tokenize(u8, input, "\r\n");
 
     const template = line_it.next() orelse unreachable;
-    var rules = std.ArrayList(Rule).init(alloc.allocator());
-    var elements = std.ArrayList(ElementCount).init(alloc.allocator());
+    var rules = std.AutoHashMap(u32, u8).init(alloc.allocator());
+    var elements = std.AutoHashMap(u8, u64).init(alloc.allocator());
 
     while (line_it.next()) |line| {
         if (line.len == 0) continue;
@@ -34,31 +34,18 @@ fn execute(input: []const u8, iterations: u32) !u64 {
         const insert = rule_it.next() orelse unreachable;
 
         const pair = Pair { .lhs = pair_string[0], .rhs = pair_string[1], };
-        try rules.append(.{
-            .pair = pair,
-            .insert = insert[0],
-        });
+        try rules.put(pair.hash(), insert[0]);
 
-        var lhs_known = false;
-        var rhs_known = false;
-        for (elements.items) |element| {
-            if (element.char == pair.lhs) lhs_known = true;
-            if (element.char == pair.rhs) rhs_known = true;
-        }
-        if (!lhs_known) try elements.append(.{ .char = pair.lhs });
-        if (!rhs_known) try elements.append(.{ .char = pair.rhs });
+        try elements.put(pair.lhs, 0);
+        try elements.put(pair.rhs, 0);
     }
 
     for (template) |char, i| {
-        for (elements.items) |*element| {
-            if (element.char == char) {
-                element.count += 1;
-                break;
-            }
-        }
+        var count = elements.getPtr(char) orelse unreachable;
+        count.* += 1;
 
         if (i < template.len - 1) {
-            recursePair(elements.items, rules.items, .{
+            try recursePair(&elements, rules, .{
                 .lhs = template[i],
                 .rhs = template[i + 1],
                 .remaining_iterations = iterations,
@@ -68,46 +55,39 @@ fn execute(input: []const u8, iterations: u32) !u64 {
 
     var least_common: u64 = std.math.maxInt(u64);
     var most_common: u64 = 0;
-    for (elements.items) |element| {
-        std.debug.print("{c} occurs {} times\n", .{ element.char, element.count });
-        if (element.count < least_common) least_common = element.count;
-        if (element.count > most_common) most_common = element.count;
+
+    var elements_it = elements.iterator();
+    while(elements_it.next()) |element| {
+        const char = element.key_ptr.*;
+        const count = element.value_ptr.*;
+        std.debug.print("{c} occurs {} times\n", .{ char, count });
+        if (count < least_common) least_common = count;
+        if (count > most_common) most_common = count;
     }
     
     return most_common - least_common;
 }
 
-fn recursePair(elements: []ElementCount, rules: []Rule, pair: Pair) void {
-    const insert = for (rules) |rule| {
-        if (rule.pair.equals(pair)) break rule.insert;
-    } else unreachable;
+fn recursePair(elements: *std.AutoHashMap(u8, u64), rules: std.AutoHashMap(u32, u8), pair: Pair) @typeInfo(@typeInfo(@TypeOf(std.hash_map.HashMap(u8,u64,std.hash_map.AutoContext(u8),80).put)).Fn.return_type.?).ErrorUnion.error_set!void {
+    const insert = rules.get(pair.hash()) orelse unreachable;
 
-    for (elements) |*element| {
-        if (element.char == insert) {
-            element.count += 1;
-            break;
-        }
-    }
+    var count = elements.getPtr(insert) orelse unreachable;
+    count.* += 1;
 
     const remaining_iterations = pair.remaining_iterations - 1;
     if (remaining_iterations == 0) return;
 
-    recursePair(elements, rules, .{
+    try recursePair(elements, rules, .{
         .lhs = pair.lhs,
         .rhs = insert,
         .remaining_iterations = remaining_iterations,
     });
-    recursePair(elements, rules, .{
+    try recursePair(elements, rules, .{
         .lhs = insert,
         .rhs = pair.rhs,
         .remaining_iterations = remaining_iterations,
     });
 }
-
-const ElementCount = struct {
-    char: u8 = 0,
-    count: u64 = 0,
-};
 
 const Pair = struct {
     lhs: u8,
@@ -117,9 +97,8 @@ const Pair = struct {
     pub fn equals(lhs: Pair, rhs: Pair) bool {
         return lhs.lhs == rhs.lhs and lhs.rhs == rhs.rhs;
     }
-};
 
-const Rule = struct {
-    pair: Pair,
-    insert: u8,
+    pub fn hash(self: Pair) u32 {
+        return @intCast(u32, self.lhs) + @intCast(u32, self.rhs) * 100;
+    }
 };
