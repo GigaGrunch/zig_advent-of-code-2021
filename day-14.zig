@@ -10,6 +10,7 @@ pub fn main() !void {
 }
 
 test "test-input" {
+    std.debug.print("\n", .{});
     const expected: u64 = 1588;
     const result = try execute(test_input, 10);
     try std.testing.expectEqual(expected, result);
@@ -68,6 +69,7 @@ fn execute(input: []const u8, iterations: u32) !u64 {
     var least_common: u64 = std.math.maxInt(u64);
     var most_common: u64 = 0;
     for (elements.items) |element| {
+        std.debug.print("{c} occurs {} times\n", .{ element.char, element.count });
         if (element.count < least_common) least_common = element.count;
         if (element.count > most_common) most_common = element.count;
     }
