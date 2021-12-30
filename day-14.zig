@@ -5,11 +5,18 @@ const test_input = @embedFile("day-14_test-input");
 
 pub fn main() !void {
     std.debug.print("--- Day 14 ---\n", .{});
-    const result = try execute(real_input, 10);
+    const result = try execute(real_input, 40);
     std.debug.print("most common - least common = {}\n", .{ result });
 }
 
-test "test-input" {
+test "test-input 40" {
+    std.debug.print("\n", .{});
+    const expected: u64 = 2188189693529;
+    const result = try execute(test_input, 40);
+    try std.testing.expectEqual(expected, result);
+}
+
+test "test-input 10" {
     std.debug.print("\n", .{});
     const expected: u64 = 1588;
     const result = try execute(test_input, 10);
