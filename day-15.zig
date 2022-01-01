@@ -4,11 +4,11 @@ const test_input = @embedFile("day-15_test-input");
 
 pub fn main() !void {
     std.debug.print("--- Day 15 ---\n", .{});
-    const result = try execute(real_input);
+    const result = try execute(real_input, true);
     std.debug.print("lowest total risk is {}\n", .{ result });
 }
 
-fn execute(input: []const u8) !u32 {
+fn execute(input: []const u8, unfold_map: bool) !u32 {
     var alloc_buffer: [1024 * 1024]u8 = undefined;
     var alloc = std.heap.FixedBufferAllocator.init(alloc_buffer[0..]);
 
@@ -31,6 +31,10 @@ fn execute(input: []const u8) !u32 {
 
             try map_list.append(pos);
         }
+    }
+
+    if (unfold_map) {
+        // TODO: unfold map (day 2)
     }
 
     var map = map_list.items;
@@ -80,9 +84,15 @@ const Pos = struct {
     lowest_cost: u32 = std.math.maxInt(u32),
 };
 
-test "test-input" {
+test "day 1 test" {
     const expected: u32 = 40;
-    const result = try execute(test_input);
+    const result = try execute(test_input, false);
+    try std.testing.expectEqual(expected, result);
+}
+
+test "day 2 test" {
+    const expected: u32 = 315;
+    const result = try execute(test_input, true);
     try std.testing.expectEqual(expected, result);
 }
 
