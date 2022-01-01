@@ -36,30 +36,39 @@ fn execute(input: []const u8) !u32 {
     var map = map_list.items;
     map[0].lowest_cost = 0;
 
-    for (map) |pos, i| {
-        const x = i % edge_length;
-        const y = i / edge_length;
+    var anything_changed = true;
+    while (anything_changed) {
+        anything_changed = false;
 
-        var neighbor_indices = std.ArrayList(usize).init(alloc.allocator());
-        defer neighbor_indices.deinit();
+        for (map) |pos, i| {
+            const x = i % edge_length;
+            const y = i / edge_length;
 
-        if (x > 0) {
-            try neighbor_indices.append(i - 1);
-        }
-        if (x < edge_length - 1) {
-            try neighbor_indices.append(i + 1);
-        }
-        if (y > 0) {
-            try neighbor_indices.append(i - edge_length);
-        }
-        if (y < edge_length - 1) {
-            try neighbor_indices.append(i + edge_length);
-        }
+            var neighbor_indices = std.ArrayList(usize).init(alloc.allocator());
+            defer neighbor_indices.deinit();
 
-        for (neighbor_indices.items) |neighbor_i| {
-            const neighbor = &map[neighbor_i];
-            const potential_cost = pos.lowest_cost + neighbor.individual_cost;
-            neighbor.lowest_cost = @minimum(potential_cost, neighbor.lowest_cost);
+            if (x > 0) {
+                try neighbor_indices.append(i - 1);
+            }
+            if (x < edge_length - 1) {
+                try neighbor_indices.append(i + 1);
+            }
+            if (y > 0) {
+                try neighbor_indices.append(i - edge_length);
+            }
+            if (y < edge_length - 1) {
+                try neighbor_indices.append(i + edge_length);
+            }
+
+            for (neighbor_indices.items) |neighbor_i| {
+                const neighbor = &map[neighbor_i];
+                const potential_cost = pos.lowest_cost + neighbor.individual_cost;
+
+                if (potential_cost < neighbor.lowest_cost) {
+                    neighbor.lowest_cost = potential_cost;
+                    anything_changed = true;
+                }
+            }
         }
     }
 
