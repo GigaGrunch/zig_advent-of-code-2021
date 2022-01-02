@@ -9,7 +9,7 @@ pub fn main() !void {
 }
 
 fn execute(input: []const u8, unfold_map: bool) !u32 {
-    var alloc_buffer: [1024 * 1024]u8 = undefined;
+    var alloc_buffer: [2 * 1024 * 1024]u8 = undefined;
     var alloc = std.heap.FixedBufferAllocator.init(alloc_buffer[0..]);
 
     var initial_map = std.ArrayList(Pos).init(alloc.allocator());
@@ -24,7 +24,7 @@ fn execute(input: []const u8, unfold_map: bool) !u32 {
         initial_edge_length = line.len;
 
         for (line) |pos_cost_char| {
-            const cost = pos_cost_char - '0';
+            const cost = @intCast(u4, pos_cost_char - '0');
             const pos = Pos {
                 .individual_cost = cost,
             };
@@ -37,8 +37,8 @@ fn execute(input: []const u8, unfold_map: bool) !u32 {
     var edge_length: usize = undefined;
 
     if (unfold_map) {
-        var full_map = std.ArrayList(Pos).init(alloc.allocator());
         edge_length = initial_edge_length * 5;
+        var full_map = try std.ArrayList(Pos).initCapacity(alloc.allocator(), edge_length * edge_length);
 
         var y: usize = 0;
         while (y < edge_length):(y += 1) {
@@ -49,7 +49,7 @@ fn execute(input: []const u8, unfold_map: bool) !u32 {
                 const initial_map_i = initial_map_y * initial_edge_length + initial_map_x;
                 const increment = (x / initial_edge_length) + (y / initial_edge_length);
                 var pos = initial_map.items[initial_map_i];
-                pos.individual_cost += @intCast(u32, increment);
+                pos.individual_cost += @intCast(u4, increment);
                 while (pos.individual_cost > 9) pos.individual_cost -= 9;
                 try full_map.append(pos);
             }
@@ -103,8 +103,8 @@ fn execute(input: []const u8, unfold_map: bool) !u32 {
     return map[map.len - 1].lowest_cost;
 }
 
-const Pos = struct {
-    individual_cost: u32,
+const Pos = packed struct {
+    individual_cost: u8,
     lowest_cost: u32 = std.math.maxInt(u32),
 };
 
@@ -118,10 +118,4 @@ test "day 2 test" {
     const expected: u32 = 315;
     const result = try execute(test_input, true);
     try std.testing.expectEqual(expected, result);
-}
-
-fn assert(condition: bool, message: []const u8) void {
-    if (!condition) {
-        @panic(message);
-    }
 }
