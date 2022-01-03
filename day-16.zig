@@ -11,14 +11,31 @@ fn sumVersions(input: []const u8) !u32 {
     return try sumVersionsRecursive(&reader);
 }
 
-fn sumVersionsRecursive(reader: *Reader) !u32 {
-    var version_sum = try parseVersion(reader.read(3));
-
+fn sumVersionsRecursive(reader: *Reader) std.fmt.ParseIntError!u32 {
+    var version_sum: u32 = try parseVersion(reader.read(3));
     const packet_type = try parseType(reader.read(3));
+
     switch (packet_type) {
-        .Literal => { },
+        .Literal => { _ = try parseLiteral(reader); },
         .Operator => {
-            // const length_type = parseLengthType(reader.read(1));
+            const length_type = parseLengthType(reader.read(1));
+            switch (length_type) {
+                .Bits => {
+                    const length = try parseBitLength(reader.read(15));
+
+                    const start = reader.current;
+                    while (reader.current < start + length) {
+                        version_sum += try sumVersionsRecursive(reader);
+                    }
+                },
+                .Packets => {
+                    var packet_count = try parsePacketCount(reader.read(11));
+
+                    while (packet_count > 0):(packet_count -= 1) {
+                        version_sum += try sumVersionsRecursive(reader);
+                    }
+                }
+            }
         }
     }
 
@@ -28,6 +45,7 @@ fn sumVersionsRecursive(reader: *Reader) !u32 {
 test "sumVersions" {
     const data = [_]struct { in: []const u8, out: u32, } {
         .{ .in = "D2FE28", .out = 6 },
+        .{ .in = "8A004A801A8002F478", .out = 16 },
     };
 
     for (data) |pair| {
@@ -145,9 +163,8 @@ const PacketType = enum {
 fn parseType(string: []const u8) !PacketType {
     const typeInt = try std.fmt.parseInt(u3, string, 2);
     return switch (typeInt) {
-        3,6 => .Operator,
         4 => .Literal,
-        else => unreachable
+        else => .Operator
     };
 }
 
