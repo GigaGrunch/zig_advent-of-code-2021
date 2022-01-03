@@ -28,7 +28,7 @@ test "integration: literal" {
     const packet_type = try parseType(reader.read(3));
     try std.testing.expectEqual(PacketType.Literal, packet_type);
 
-    const literal_value = try parseLiteral(reader.string[reader.current..]);
+    const literal_value = try parseLiteral(&reader);
     try std.testing.expectEqual(@as(u32, 2021), literal_value);
 }
 
@@ -72,14 +72,12 @@ test "parseLengthType" {
     }
 }
 
-fn parseLiteral(string: []const u8) !u32 {
+fn parseLiteral(reader: *Reader) !u32 {
     var buffer: [1024]u8 = undefined;
     var length: u32 = 0;
 
-    var current_start: usize = 0;
-    while (true):(current_start += 5) {
-        const current_end = current_start + 5;
-        const current = string[current_start..current_end];
+    while (true) {
+        const current = reader.read(5);
 
         std.mem.copy(u8, buffer[length..], current[1..]);
         length += 4;
@@ -91,14 +89,9 @@ fn parseLiteral(string: []const u8) !u32 {
 }
 
 test "parseLiteral" {
-    const data = [_]struct { in: []const u8, out: u32, } {
-        .{ .in = "101111111000101000", .out = 2021 },
-    };
-
-    for (data) |pair| {
-        const result = try parseLiteral(pair.in);
-        try std.testing.expectEqual(pair.out, result);
-    }
+    var reader = Reader { .string = "101111111000101000" };
+    const value = try parseLiteral(&reader);
+    try std.testing.expectEqual(@as(u32, 2021), value);
 }
 
 const PacketType = enum {
