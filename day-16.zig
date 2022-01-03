@@ -46,6 +46,9 @@ test "sumVersions" {
     const data = [_]struct { in: []const u8, out: u32, } {
         .{ .in = "D2FE28", .out = 6 },
         .{ .in = "8A004A801A8002F478", .out = 16 },
+        .{ .in = "620080001611562C8802118E34", .out = 12 },
+        .{ .in = "C0015000016115A2E0802F182340", .out = 23 },
+        .{ .in = "A0016C880162017C3686B18A3D4780", .out = 31 },
     };
 
     for (data) |pair| {
