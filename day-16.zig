@@ -4,6 +4,34 @@ pub fn main() !void {
     std.debug.print("--- Day 16 ---\n", .{});
 }
 
+const Reader = struct {
+    string: []const u8,
+    current: usize = 0,
+
+    pub fn read(reader: *@This(), length: usize) []const u8 {
+        const start = reader.current;
+        const end = start + length;
+        reader.current = end;
+        return reader.string[start..end];
+    }
+};
+
+test "integration: literal" {
+    const input = "D2FE28";
+    var buffer: [1024]u8 = undefined;
+    const binary = hexToBinary(input, buffer[0..]);
+    var reader = Reader { .string = binary };
+
+    const version = try parseVersion(reader.read(3));
+    try std.testing.expectEqual(@as(u3, 6), version);
+
+    const packet_type = try parseType(reader.read(3));
+    try std.testing.expectEqual(PacketType.Literal, packet_type);
+
+    const literal_value = try parseLiteral(reader.string[reader.current..]);
+    try std.testing.expectEqual(@as(u32, 2021), literal_value);
+}
+
 fn parseBitLength(string: []const u8) !u15 {
     return try std.fmt.parseInt(u15, string, 2);
 }
