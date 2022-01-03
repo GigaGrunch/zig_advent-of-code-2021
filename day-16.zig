@@ -4,6 +4,31 @@ pub fn main() !void {
     std.debug.print("--- Day 16 ---\n", .{});
 }
 
+const LengthType = enum {
+    Bits,
+    Packets,
+};
+
+fn parseLengthType(string: []const u8) LengthType {
+    return switch (string[6]) {
+        '0' => .Bits,
+        '1' => .Packets,
+        else => unreachable
+    };
+}
+
+test "parseLengthType" {
+    const data = [_]struct { in: []const u8, out: LengthType, } {
+        .{ .in = "00111000000000000110111101000101001010010001001000000000", .out = .Bits },
+        .{ .in = "11101110000000001101010000001100100000100011000001100000", .out = .Packets },
+    };
+
+    for (data) |pair| {
+        const result = parseLengthType(pair.in);
+        try std.testing.expectEqual(pair.out, result);
+    }
+}
+
 fn parseLiteral(string: []const u8) !u32 {
     var buffer: [1024]u8 = undefined;
     var length: u32 = 0;
@@ -33,6 +58,11 @@ test "parseLiteral" {
     }
 }
 
+const PacketType = enum {
+    Literal,
+    Operator,
+};
+
 fn parseType(string: []const u8) !PacketType {
     const typeInt = try std.fmt.parseInt(u3, string[3..6], 2);
     return switch (typeInt) {
@@ -41,11 +71,6 @@ fn parseType(string: []const u8) !PacketType {
         else => unreachable
     };
 }
-
-const PacketType = enum {
-    Literal,
-    Operator,
-};
 
 test "parseType" {
     const data = [_]struct { in: []const u8, out: PacketType, } {
