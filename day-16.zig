@@ -1,11 +1,14 @@
 const std = @import("std");
+const real_input = @embedFile("day-16_real-input");
 
 pub fn main() !void {
     std.debug.print("--- Day 16 ---\n", .{});
+    const version_sum = try sumVersions(real_input);
+    std.debug.print("sum of all versions is {}\n", .{ version_sum });
 }
 
 fn sumVersions(input: []const u8) !u32 {
-    var buffer: [1024]u8 = undefined;
+    var buffer: [1024 * 1024]u8 = undefined;
     const binary = hexToBinary(input, buffer[0..]);
     var reader = Reader { .string = binary };
     return try sumVersionsRecursive(&reader);
@@ -136,7 +139,7 @@ test "parseLengthType" {
     }
 }
 
-fn parseLiteral(reader: *Reader) !u32 {
+fn parseLiteral(reader: *Reader) !u64 {
     var buffer: [1024]u8 = undefined;
     var length: u32 = 0;
 
@@ -149,7 +152,7 @@ fn parseLiteral(reader: *Reader) !u32 {
         if (current[0] == '0') break;
     }
 
-    return try std.fmt.parseInt(u32, buffer[0..length], 2);
+    return try std.fmt.parseInt(u64, buffer[0..length], 2);
 }
 
 test "parseLiteral" {
@@ -222,7 +225,7 @@ fn hexToBinary(hex: []const u8, buffer: []u8) []const u8 {
             'D' => "1101",
             'E' => "1110",
             'F' => "1111",
-            else => unreachable
+            else => ""
         };
 
         std.mem.copy(u8, buffer[count..], string);
