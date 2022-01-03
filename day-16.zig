@@ -4,6 +4,35 @@ pub fn main() !void {
     std.debug.print("--- Day 16 ---\n", .{});
 }
 
+fn parseLiteral(string: []const u8) !u32 {
+    var buffer: [1024]u8 = undefined;
+    var length: u32 = 0;
+
+    var current_start: usize = 6;
+    while (true):(current_start += 5) {
+        const current_end = current_start + 5;
+        const current = string[current_start..current_end];
+
+        std.mem.copy(u8, buffer[length..], current[1..]);
+        length += 4;
+
+        if (current[0] == '0') break;
+    }
+
+    return try std.fmt.parseInt(u32, buffer[0..length], 2);
+}
+
+test "parseLiteral" {
+    const data = [_]struct { in: []const u8, out: u32, } {
+        .{ .in = "110100101111111000101000", .out = 2021 },
+    };
+
+    for (data) |pair| {
+        const result = try parseLiteral(pair.in);
+        try std.testing.expectEqual(pair.out, result);
+    }
+}
+
 fn parseType(string: []const u8) !PacketType {
     const typeInt = try std.fmt.parseInt(u3, string[3..6], 2);
     return switch (typeInt) {
