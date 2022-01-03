@@ -4,6 +4,21 @@ pub fn main() !void {
     std.debug.print("--- Day 16 ---\n", .{});
 }
 
+fn parseBitLength(string: []const u8) !u15 {
+    return try std.fmt.parseInt(u15, string[7..22], 2);
+}
+
+test "parseBitLength" {
+    const data = [_]struct { in: []const u8, out: u15, } {
+        .{ .in = "00111000000000000110111101000101001010010001001000000000", .out = 27 },
+    };
+
+    for (data) |pair| {
+        const result = try parseBitLength(pair.in);
+        try std.testing.expectEqual(pair.out, result);
+    }
+}
+
 const LengthType = enum {
     Bits,
     Packets,
