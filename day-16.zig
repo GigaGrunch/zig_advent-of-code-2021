@@ -64,6 +64,17 @@ test "integration: literal" {
     try std.testing.expectEqual(@as(u32, 2021), literal_value);
 }
 
+fn parsePacketCount(string: []const u8) !u11 {
+    return try std.fmt.parseInt(u11, string, 2);
+}
+
+test "parsePacketCount" {
+    const input: []const u8 = "00000000011";
+    const expected: u11 = 3;
+    const result = try parsePacketCount(input);
+    try std.testing.expectEqual(expected, result);
+}
+
 fn parseBitLength(string: []const u8) !u15 {
     return try std.fmt.parseInt(u15, string, 2);
 }
