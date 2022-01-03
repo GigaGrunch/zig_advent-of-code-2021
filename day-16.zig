@@ -4,6 +4,33 @@ pub fn main() !void {
     std.debug.print("--- Day 16 ---\n", .{});
 }
 
+fn parseType(string: []const u8) !PacketType {
+    const typeInt = try std.fmt.parseInt(u3, string[3..6], 2);
+    return switch (typeInt) {
+        3,6 => .Operator,
+        4 => .Literal,
+        else => unreachable
+    };
+}
+
+const PacketType = enum {
+    Literal,
+    Operator,
+};
+
+test "parseType" {
+    const data = [_]struct { in: []const u8, out: PacketType, } {
+        .{ .in = "110100101111111000101000", .out = .Literal },
+        .{ .in = "00111000000000000110111101000101001010010001001000000000", .out = .Operator },
+        .{ .in = "11101110000000001101010000001100100000100011000001100000", .out = .Operator },
+    };
+
+    for (data) |pair| {
+        const result = try parseType(pair.in);
+        try std.testing.expectEqual(pair.out, result);
+    }
+}
+
 fn parseVersion(string: []const u8) !u3 {
     return try std.fmt.parseInt(u3, string[0..3], 2);
 }
