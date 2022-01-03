@@ -5,12 +5,12 @@ pub fn main() !void {
 }
 
 fn parseBitLength(string: []const u8) !u15 {
-    return try std.fmt.parseInt(u15, string[7..22], 2);
+    return try std.fmt.parseInt(u15, string, 2);
 }
 
 test "parseBitLength" {
     const data = [_]struct { in: []const u8, out: u15, } {
-        .{ .in = "00111000000000000110111101000101001010010001001000000000", .out = 27 },
+        .{ .in = "000000000011011", .out = 27 },
     };
 
     for (data) |pair| {
@@ -25,7 +25,7 @@ const LengthType = enum {
 };
 
 fn parseLengthType(string: []const u8) LengthType {
-    return switch (string[6]) {
+    return switch (string[0]) {
         '0' => .Bits,
         '1' => .Packets,
         else => unreachable
@@ -34,8 +34,8 @@ fn parseLengthType(string: []const u8) LengthType {
 
 test "parseLengthType" {
     const data = [_]struct { in: []const u8, out: LengthType, } {
-        .{ .in = "00111000000000000110111101000101001010010001001000000000", .out = .Bits },
-        .{ .in = "11101110000000001101010000001100100000100011000001100000", .out = .Packets },
+        .{ .in = "0", .out = .Bits },
+        .{ .in = "1", .out = .Packets },
     };
 
     for (data) |pair| {
@@ -48,7 +48,7 @@ fn parseLiteral(string: []const u8) !u32 {
     var buffer: [1024]u8 = undefined;
     var length: u32 = 0;
 
-    var current_start: usize = 6;
+    var current_start: usize = 0;
     while (true):(current_start += 5) {
         const current_end = current_start + 5;
         const current = string[current_start..current_end];
@@ -64,7 +64,7 @@ fn parseLiteral(string: []const u8) !u32 {
 
 test "parseLiteral" {
     const data = [_]struct { in: []const u8, out: u32, } {
-        .{ .in = "110100101111111000101000", .out = 2021 },
+        .{ .in = "101111111000101000", .out = 2021 },
     };
 
     for (data) |pair| {
@@ -79,7 +79,7 @@ const PacketType = enum {
 };
 
 fn parseType(string: []const u8) !PacketType {
-    const typeInt = try std.fmt.parseInt(u3, string[3..6], 2);
+    const typeInt = try std.fmt.parseInt(u3, string, 2);
     return switch (typeInt) {
         3,6 => .Operator,
         4 => .Literal,
@@ -89,9 +89,9 @@ fn parseType(string: []const u8) !PacketType {
 
 test "parseType" {
     const data = [_]struct { in: []const u8, out: PacketType, } {
-        .{ .in = "110100101111111000101000", .out = .Literal },
-        .{ .in = "00111000000000000110111101000101001010010001001000000000", .out = .Operator },
-        .{ .in = "11101110000000001101010000001100100000100011000001100000", .out = .Operator },
+        .{ .in = "100", .out = .Literal },
+        .{ .in = "110", .out = .Operator },
+        .{ .in = "011", .out = .Operator },
     };
 
     for (data) |pair| {
@@ -101,14 +101,14 @@ test "parseType" {
 }
 
 fn parseVersion(string: []const u8) !u3 {
-    return try std.fmt.parseInt(u3, string[0..3], 2);
+    return try std.fmt.parseInt(u3, string, 2);
 }
 
 test "parseVersion" {
     const data = [_]struct { in: []const u8, out: u3, } {
-        .{ .in = "110100101111111000101000", .out = 6 },
-        .{ .in = "00111000000000000110111101000101001010010001001000000000", .out = 1 },
-        .{ .in = "11101110000000001101010000001100100000100011000001100000", .out = 7 },
+        .{ .in = "110", .out = 6 },
+        .{ .in = "001", .out = 1 },
+        .{ .in = "111", .out = 7 },
     };
 
     for (data) |pair| {
