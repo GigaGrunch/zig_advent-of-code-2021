@@ -4,6 +4,38 @@ pub fn main() !void {
     std.debug.print("--- Day 16 ---\n", .{});
 }
 
+fn sumVersions(input: []const u8) !u32 {
+    var buffer: [1024]u8 = undefined;
+    const binary = hexToBinary(input, buffer[0..]);
+    var reader = Reader { .string = binary };
+    return try sumVersionsRecursive(&reader);
+}
+
+fn sumVersionsRecursive(reader: *Reader) !u32 {
+    var version_sum = try parseVersion(reader.read(3));
+
+    const packet_type = try parseType(reader.read(3));
+    switch (packet_type) {
+        .Literal => { },
+        .Operator => {
+            // const length_type = parseLengthType(reader.read(1));
+        }
+    }
+
+    return version_sum;
+}
+
+test "sumVersions" {
+    const data = [_]struct { in: []const u8, out: u32, } {
+        .{ .in = "D2FE28", .out = 6 },
+    };
+
+    for (data) |pair| {
+        const result = try sumVersions(pair.in);
+        try std.testing.expectEqual(pair.out, result);
+    }
+}
+
 const Reader = struct {
     string: []const u8,
     current: usize = 0,
