@@ -15,16 +15,16 @@ fn sumVersions(input: []const u8) !u32 {
 }
 
 fn sumVersionsRecursive(reader: *Reader) std.fmt.ParseIntError!u32 {
-    var version_sum: u32 = try parseVersion(reader.read(3));
-    const packet_type = try parseType(reader.read(3));
+    var version_sum: u32 = try reader.readVersion();
+    const packet_type = try reader.readType();
 
     switch (packet_type) {
         .Literal => { _ = try parseLiteral(reader); },
         else => {
-            const length_type = parseLengthType(reader.read(1));
+            const length_type = reader.readLengthType();
             switch (length_type) {
                 .Bits => {
-                    const length = try parseBitLength(reader.read(15));
+                    const length = try reader.readBitLength();
 
                     const start = reader.current;
                     while (reader.current < start + length) {
@@ -32,7 +32,7 @@ fn sumVersionsRecursive(reader: *Reader) std.fmt.ParseIntError!u32 {
                     }
                 },
                 .Packets => {
-                    var packet_count = try parsePacketCount(reader.read(11));
+                    var packet_count = try reader.readPacketCount();
 
                     while (packet_count > 0):(packet_count -= 1) {
                         version_sum += try sumVersionsRecursive(reader);
@@ -64,7 +64,31 @@ const Reader = struct {
     string: []const u8,
     current: usize = 0,
 
-    pub fn read(reader: *@This(), length: usize) []const u8 {
+    pub fn readVersion(reader: *@This()) !u3 {
+        return try parseVersion(reader.read(3));
+    }
+
+    pub fn readType(reader: *@This()) !PacketType {
+        return try parseType(reader.read(3));
+    }
+
+    pub fn readLengthType(reader: *@This()) LengthType {
+        return parseLengthType(reader.read(1));
+    }
+
+    pub fn readBitLength(reader: *@This()) !u15 {
+        return try parseBitLength(reader.read(15));
+    }
+
+    pub fn readPacketCount(reader: *@This()) !u11 {
+        return try parsePacketCount(reader.read(11));
+    }
+
+    pub fn readLiteralSegment(reader: *@This()) []const u8 {
+        return reader.read(5);
+    }
+
+    fn read(reader: *@This(), length: usize) []const u8 {
         const start = reader.current;
         const end = start + length;
         reader.current = end;
@@ -78,10 +102,10 @@ test "integration: literal" {
     const binary = hexToBinary(input, buffer[0..]);
     var reader = Reader { .string = binary };
 
-    const version = try parseVersion(reader.read(3));
+    const version = try reader.readVersion();
     try std.testing.expectEqual(@as(u3, 6), version);
 
-    const packet_type = try parseType(reader.read(3));
+    const packet_type = try reader.readType();
     try std.testing.expectEqual(PacketType.Literal, packet_type);
 
     const literal_value = try parseLiteral(&reader);
@@ -144,7 +168,7 @@ fn parseLiteral(reader: *Reader) !u64 {
     var length: u32 = 0;
 
     while (true) {
-        const current = reader.read(5);
+        const current = reader.readLiteralSegment();
 
         std.mem.copy(u8, buffer[length..], current[1..]);
         length += 4;
