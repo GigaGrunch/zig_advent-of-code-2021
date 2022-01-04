@@ -7,6 +7,117 @@ pub fn main() !void {
     std.debug.print("sum of all versions is {}\n", .{ version_sum });
 }
 
+fn evaluate(input: []const u8) !u64 {
+    var buffer: [1024 * 1024]u8 = undefined;
+    const binary = hexToBinary(input, buffer[0..]);
+    var reader = Reader { .string = binary };
+    return try evaluateRecursive(&reader);
+}
+
+fn evaluateRecursive(reader: *Reader) std.fmt.ParseIntError!u64 {
+    _ = try reader.readVersion();
+    const packet_type = try reader.readType();
+
+    if (packet_type == .Literal) return try reader.readLiteral();
+
+    const length_type = reader.readLengthType();
+    var params_it = ParameterIterator { .reader = reader, .length_type = length_type };
+
+    switch (length_type) {
+        .Bits => {
+            const bits = try reader.readBitLength();
+            params_it.remaining = .{ .bits = bits };
+        },
+        .Packets => {
+            const packets = try reader.readPacketCount();
+            params_it.remaining = .{ .packets = packets };
+        }
+    }
+
+    const first_param = (try params_it.next()) orelse unreachable;
+
+    switch (packet_type) {
+        .Sum => {
+            var sum = first_param;
+            while (try params_it.next()) |param| sum += param;
+            return sum;
+        },
+        .Product => {
+            var product = first_param;
+            while (try params_it.next()) |param| product *= param;
+            return product;
+        },
+        .Minimum => {
+            var minimum = first_param;
+            while (try params_it.next()) |param| minimum = @minimum(minimum, param);
+            return minimum;
+        },
+        .Maximum => {
+            var maximum = first_param;
+            while (try params_it.next()) |param| maximum = @maximum(maximum, param);
+            return maximum;
+        },
+        .GreaterThan => {
+            const second_param = (try params_it.next()) orelse unreachable;
+            return if (first_param > second_param) 1 else 0;
+        },
+        .LessThan => {
+            const second_param = (try params_it.next()) orelse unreachable;
+            return if (first_param < second_param) 1 else 0;
+        },
+        .EqualTo => {
+            const second_param = (try params_it.next()) orelse unreachable;
+            return if (first_param == second_param) 1 else 0;
+        },
+        .Literal => unreachable,
+    }
+}
+
+const ParameterIterator = struct {
+    remaining: union {
+        bits: u15,
+        packets: u11,
+    } = undefined,
+
+    reader: *Reader,
+    length_type: LengthType,
+
+    pub fn next(it: *ParameterIterator) !?u64 {
+        switch (it.length_type) {
+            .Bits => if (it.remaining.bits <= 0) return null,
+            .Packets => if (it.remaining.packets <= 0) return null
+        }
+
+        const before = it.reader.current;
+        const result = try evaluateRecursive(it.reader);
+
+        switch (it.length_type) {
+            .Bits => it.remaining.bits -= @intCast(u15, it.reader.current - before),
+            .Packets => it.remaining.packets -= 1
+        }
+
+        return result;
+    }
+};
+
+test "evaluate" {
+    const data = [_]struct { input: []const u8, expected: u64, } {
+        .{ .input = "C200B40A82", .expected = 3 },
+        .{ .input = "04005AC33890", .expected = 54 },
+        .{ .input = "880086C3E88112", .expected = 7 },
+        .{ .input = "CE00C43D881120", .expected = 9 },
+        .{ .input = "D8005AC2A8F0", .expected = 1 },
+        .{ .input = "F600BC2D8F", .expected = 0 },
+        .{ .input = "9C005AC2F8F0", .expected = 0 },
+        .{ .input = "9C0141080250320F1802104A08", .expected = 1 },
+    };
+
+    for (data) |pair| {
+        const result = try evaluate(pair.input);
+        try std.testing.expectEqual(pair.expected, result);
+    }
+}
+
 fn sumVersions(input: []const u8) !u32 {
     var buffer: [1024 * 1024]u8 = undefined;
     const binary = hexToBinary(input, buffer[0..]);
