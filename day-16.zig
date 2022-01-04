@@ -3,8 +3,12 @@ const real_input = @embedFile("day-16_real-input");
 
 pub fn main() !void {
     std.debug.print("--- Day 16 ---\n", .{});
+
     const version_sum = try sumVersions(real_input);
     std.debug.print("sum of all versions is {}\n", .{ version_sum });
+
+    const expression_value = try evaluate(real_input);
+    std.debug.print("value of expression is {}\n", .{ expression_value });
 }
 
 fn evaluate(input: []const u8) !u64 {
