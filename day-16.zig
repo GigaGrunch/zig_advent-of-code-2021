@@ -20,7 +20,7 @@ fn sumVersionsRecursive(reader: *Reader) std.fmt.ParseIntError!u32 {
 
     switch (packet_type) {
         .Literal => { _ = try parseLiteral(reader); },
-        .Operator => {
+        else => {
             const length_type = parseLengthType(reader.read(1));
             switch (length_type) {
                 .Bits => {
@@ -161,24 +161,27 @@ test "parseLiteral" {
     try std.testing.expectEqual(@as(u64, 2021), value);
 }
 
-const PacketType = enum {
-    Literal,
-    Operator,
+const PacketType = enum(u3) {
+    Sum = 0,
+    Product = 1,
+    Minimum = 2,
+    Maximum = 3,
+    Literal = 4,
+    GreaterThan = 5,
+    LessThan = 6,
+    EqualTo = 7,
 };
 
 fn parseType(string: []const u8) !PacketType {
     const typeInt = try std.fmt.parseInt(u3, string, 2);
-    return switch (typeInt) {
-        4 => .Literal,
-        else => .Operator
-    };
+    return @intToEnum(PacketType, typeInt);
 }
 
 test "parseType" {
     const data = [_]struct { in: []const u8, out: PacketType, } {
         .{ .in = "100", .out = .Literal },
-        .{ .in = "110", .out = .Operator },
-        .{ .in = "011", .out = .Operator },
+        .{ .in = "110", .out = .LessThan },
+        .{ .in = "011", .out = .Maximum },
     };
 
     for (data) |pair| {
