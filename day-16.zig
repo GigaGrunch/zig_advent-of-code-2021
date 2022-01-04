@@ -19,7 +19,7 @@ fn sumVersionsRecursive(reader: *Reader) std.fmt.ParseIntError!u32 {
     const packet_type = try reader.readType();
 
     switch (packet_type) {
-        .Literal => { _ = try parseLiteral(reader); },
+        .Literal => { _ = try reader.readLiteral(); },
         else => {
             const length_type = reader.readLengthType();
             switch (length_type) {
@@ -84,8 +84,20 @@ const Reader = struct {
         return try parsePacketCount(reader.read(11));
     }
 
-    pub fn readLiteralSegment(reader: *@This()) []const u8 {
-        return reader.read(5);
+    pub fn readLiteral(reader: *@This()) !u64 {
+        var buffer: [1024]u8 = undefined;
+        var length: u32 = 0;
+
+        while (true) {
+            const current = reader.read(5);
+
+            std.mem.copy(u8, buffer[length..], current[1..]);
+            length += 4;
+
+            if (current[0] == '0') break;
+        }
+
+        return try std.fmt.parseInt(u64, buffer[0..length], 2);
     }
 
     fn read(reader: *@This(), length: usize) []const u8 {
@@ -108,7 +120,7 @@ test "integration: literal" {
     const packet_type = try reader.readType();
     try std.testing.expectEqual(PacketType.Literal, packet_type);
 
-    const literal_value = try parseLiteral(&reader);
+    const literal_value = try reader.readLiteral();
     try std.testing.expectEqual(@as(u64, 2021), literal_value);
 }
 
@@ -163,25 +175,9 @@ test "parseLengthType" {
     }
 }
 
-fn parseLiteral(reader: *Reader) !u64 {
-    var buffer: [1024]u8 = undefined;
-    var length: u32 = 0;
-
-    while (true) {
-        const current = reader.readLiteralSegment();
-
-        std.mem.copy(u8, buffer[length..], current[1..]);
-        length += 4;
-
-        if (current[0] == '0') break;
-    }
-
-    return try std.fmt.parseInt(u64, buffer[0..length], 2);
-}
-
-test "parseLiteral" {
+test "parse literal" {
     var reader = Reader { .string = "101111111000101000" };
-    const value = try parseLiteral(&reader);
+    const value = try reader.readLiteral();
     try std.testing.expectEqual(@as(u64, 2021), value);
 }
 
