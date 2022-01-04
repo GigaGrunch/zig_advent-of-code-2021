@@ -85,7 +85,7 @@ test "integration: literal" {
     try std.testing.expectEqual(PacketType.Literal, packet_type);
 
     const literal_value = try parseLiteral(&reader);
-    try std.testing.expectEqual(@as(u32, 2021), literal_value);
+    try std.testing.expectEqual(@as(u64, 2021), literal_value);
 }
 
 fn parsePacketCount(string: []const u8) !u11 {
@@ -158,7 +158,7 @@ fn parseLiteral(reader: *Reader) !u64 {
 test "parseLiteral" {
     var reader = Reader { .string = "101111111000101000" };
     const value = try parseLiteral(&reader);
-    try std.testing.expectEqual(@as(u32, 2021), value);
+    try std.testing.expectEqual(@as(u64, 2021), value);
 }
 
 const PacketType = enum {
