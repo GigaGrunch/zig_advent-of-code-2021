@@ -4,7 +4,7 @@ pub fn main() !void {
     std.debug.print("--- Day 17 ---\n", .{});
 }
 
-fn simulateProbe(target: Rect, initial_velocity: Vector) struct{ highest_y: i32, is_hit: bool, } {
+fn simulateProbe(target: Rect, initial_velocity: Vector) ProbeResult {
     var probe = Probe { .vel = initial_velocity };
     var highest_y: i32 = probe.pos.y;
 
@@ -20,14 +20,26 @@ fn simulateProbe(target: Rect, initial_velocity: Vector) struct{ highest_y: i32,
     return .{ .highest_y = highest_y, .is_hit = is_hit };
 }
 
+const ProbeResult = struct{ 
+    highest_y: i32,
+    is_hit: bool,
+};
+
 test "simulateProbe" {
     const input_area = Rect { .min_x = 20, .max_x = 30, .min_y = -10, .max_y = -5 };
-    const initial_velocity = Vector { .x = 6, .y = 9 };
-    const expected_hit = true;
-    const expected_y: i32 = 45;
-    const result = simulateProbe(input_area, initial_velocity);
-    try std.testing.expectEqual(expected_hit, result.is_hit);
-    try std.testing.expectEqual(expected_y, result.highest_y);
+
+    const test_pairs = [_]struct { initial_velocity: Vector, expected: ProbeResult, } {
+        .{ .initial_velocity = .{ .x = 7,  .y = 2  }, .expected = .{ .highest_y = 3,  .is_hit = true  } },
+        .{ .initial_velocity = .{ .x = 6,  .y = 3  }, .expected = .{ .highest_y = 6,  .is_hit = true  } },
+        .{ .initial_velocity = .{ .x = 9,  .y = 0  }, .expected = .{ .highest_y = 0,  .is_hit = true  } },
+        .{ .initial_velocity = .{ .x = 17, .y = -4 }, .expected = .{ .highest_y = 0,  .is_hit = false } },
+        .{ .initial_velocity = .{ .x = 6,  .y = 9  }, .expected = .{ .highest_y = 45, .is_hit = true  } },
+    };
+
+    for (test_pairs) |pair| {
+        const result = simulateProbe(input_area, pair.initial_velocity);
+        try std.testing.expectEqual(pair.expected, result);
+    }
 }
 
 const Probe = struct {
