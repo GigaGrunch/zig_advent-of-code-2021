@@ -4,6 +4,33 @@ pub fn main() !void {
     std.debug.print("--- Day 17 ---\n", .{});
 }
 
+fn findBestHit(target: Rect) i32 {
+    const limit: i32 = 1000;
+
+    var highest_y: i32 = std.math.minInt(i32);
+
+    var y: i32 = -limit;
+    while (y < limit):(y += 1) {
+        var x : i32 = 1;
+        while (x < limit):(x += 1) {
+            const initial_velocity = Vector { .x = x, .y = y };
+            const result = simulateProbe(target, initial_velocity);
+            if (result.is_hit and result.highest_y > highest_y) {
+                highest_y = result.highest_y;
+            }
+        }
+    }
+
+    return highest_y;
+}
+
+test "findBestHit" {
+    const input_area = Rect { .min_x = 20, .max_x = 30, .min_y = -10, .max_y = -5 };
+    const expected: i32 = 45;
+    const result = findBestHit(input_area);
+    try std.testing.expectEqual(expected, result);
+}
+
 fn simulateProbe(target: Rect, initial_velocity: Vector) ProbeResult {
     var probe = Probe { .vel = initial_velocity };
     var highest_y: i32 = probe.pos.y;
