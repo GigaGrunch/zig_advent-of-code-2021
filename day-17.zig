@@ -1,10 +1,15 @@
 const std = @import("std");
+const real_input = "target area: x=60..94, y=-171..-136";
 
 pub fn main() !void {
     std.debug.print("--- Day 17 ---\n", .{});
+
+    const target = try parseRect(removePrefix(real_input));
+    const highest_y = findHighestY(target);
+    std.debug.print("highest achievable Y is {}\n", .{ highest_y });
 }
 
-fn findBestHit(target: Rect) i32 {
+fn findHighestY(target: Rect) i32 {
     const limit: i32 = 1000;
 
     var highest_y: i32 = std.math.minInt(i32);
@@ -24,10 +29,10 @@ fn findBestHit(target: Rect) i32 {
     return highest_y;
 }
 
-test "findBestHit" {
+test "findHighestY" {
     const input_area = Rect { .min_x = 20, .max_x = 30, .min_y = -10, .max_y = -5 };
     const expected: i32 = 45;
-    const result = findBestHit(input_area);
+    const result = findHighestY(input_area);
     try std.testing.expectEqual(expected, result);
 }
 
