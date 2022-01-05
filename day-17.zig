@@ -5,14 +5,16 @@ pub fn main() !void {
     std.debug.print("--- Day 17 ---\n", .{});
 
     const target = try parseRect(removePrefix(real_input));
-    const highest_y = findHighestY(target);
-    std.debug.print("highest achievable Y is {}\n", .{ highest_y });
+    const result = findHighestAndCount(target);
+    std.debug.print("highest achievable Y is {}\n", .{ result.highest_y });
+    std.debug.print("total hit count is {}\n", .{ result.count });
 }
 
-fn findHighestY(target: Rect) i32 {
+fn findHighestAndCount(target: Rect) struct { highest_y: i32, count: u32, } {
     const limit: i32 = 1000;
 
     var highest_y: i32 = std.math.minInt(i32);
+    var hit_count: u32 = 0;
 
     var y: i32 = -limit;
     while (y < limit):(y += 1) {
@@ -20,20 +22,26 @@ fn findHighestY(target: Rect) i32 {
         while (x < limit):(x += 1) {
             const initial_velocity = Vector { .x = x, .y = y };
             const result = simulateProbe(target, initial_velocity);
-            if (result.is_hit and result.highest_y > highest_y) {
-                highest_y = result.highest_y;
+            if (result.is_hit) {
+                hit_count += 1;
+
+                if (result.highest_y > highest_y) {
+                    highest_y = result.highest_y;
+                }
             }
         }
     }
 
-    return highest_y;
+    return .{ .highest_y = highest_y, .count = hit_count };
 }
 
-test "findHighestY" {
+test "findHighestAndCount" {
     const input_area = Rect { .min_x = 20, .max_x = 30, .min_y = -10, .max_y = -5 };
-    const expected: i32 = 45;
-    const result = findHighestY(input_area);
-    try std.testing.expectEqual(expected, result);
+    const expected_highest: i32 = 45;
+    const expected_count: u32 = 112;
+    const result = findHighestAndCount(input_area);
+    try std.testing.expectEqual(expected_highest, result.highest_y);
+    try std.testing.expectEqual(expected_count, result.count);
 }
 
 fn simulateProbe(target: Rect, initial_velocity: Vector) ProbeResult {
