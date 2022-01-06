@@ -12,18 +12,55 @@ pub fn main() !void {
     allocator = alloc.allocator();
     numbers = std.ArrayList(*u32).init(allocator);
 
-    const input = "[[[[[9,8],1],2],3],4]";
+    //const input = "[[[[[9,8],1],2],3],4]";
     // const input = "[[[[1,2],[3,4]],[[5,6],[7,8]]],9]";
-    // const input = "[7,[6,[5,[4,[3,2]]]]]";
+    const input = "[7,[6,[5,[4,[3,2]]]]]";
     var input_it = StringIterator { .string = input };
 
     var outer_value = try parseValue(&input_it, 0);
 
+    printValue(outer_value);
+    std.debug.print("\n", .{});
+
     var value_it = try ValueIterator.init(outer_value);
+    var last_number: ?*u32 = null;
     while (try value_it.next()) |value| {
-        printValue(value);
-        std.debug.print("\n", .{});
+        switch (value.*) {
+            .number => |*number| {
+                last_number = number;
+            },
+            .pair => |pair| {
+                if (pair.shouldExplode()) {
+                    printValue(value);
+                    std.debug.print("\n", .{});
+
+                    _ = (try value_it.next()).?;
+                    _ = (try value_it.next()).?;
+
+                    if (last_number) |number| {
+                        number.* += pair.lhs.number;
+                    }
+
+                    while (try value_it.next()) |next_value| {
+                        switch (next_value.*) {
+                            .number => |*number| {
+                                number.* += pair.rhs.number;
+                                break;
+                            },
+                            .pair => { },
+                        }
+                    }
+
+                    value.* = .{ .number = 0 };
+
+                    break;
+                }
+            },
+        }
     }
+
+    printValue(outer_value);
+    std.debug.print("\n", .{});
 }
 
 fn printValue(value: *Value) void {
@@ -83,8 +120,8 @@ const ValueIterator = struct {
         switch (result.*) {
             .number => { },
             .pair => |pair| {
-                try it.stack.append(pair.lhs);
                 try it.stack.append(pair.rhs);
+                try it.stack.append(pair.lhs);
             }
         }
         return result;
