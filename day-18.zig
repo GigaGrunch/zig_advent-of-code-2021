@@ -12,30 +12,24 @@ pub fn main() !void {
     allocator = alloc.allocator();
     numbers = std.ArrayList(*u32).init(allocator);
 
-    //const input = "[[[[[9,8],1],2],3],4]";
-    // const input = "[[[[1,2],[3,4]],[[5,6],[7,8]]],9]";
-    const input = "[7,[6,[5,[4,[3,2]]]]]";
+    const input = "[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]";
     var input_it = StringIterator { .string = input };
 
     var root_value = try parseValue(&input_it, 0);
 
-    printValue(root_value);
-    std.debug.print("\n", .{});
-
     while (true) {
+        printValue(root_value);
+        std.debug.print("\n", .{});
         if (try handleFirstExplosion(root_value)) continue;
         if (try handleFirstSplit(root_value)) continue;
         break;
     }
-
-    printValue(root_value);
-    std.debug.print("\n", .{});
 }
 
 fn handleFirstSplit(root_value: *Value) !bool {
     var value_it = try ValueIterator.init(root_value);
+    var current_level: u32 = 0;
     return while (try value_it.next()) |value| {
-        var current_level: u32 = 0;
         switch (value.*) {
             .number => |number| {
                 if (number >= 10) {
@@ -72,9 +66,6 @@ fn handleFirstExplosion(root_value: *Value) !bool {
             },
             .pair => |pair| {
                 if (pair.shouldExplode()) {
-                    printValue(value);
-                    std.debug.print("\n", .{});
-
                     _ = (try value_it.next()).?;
                     _ = (try value_it.next()).?;
 
