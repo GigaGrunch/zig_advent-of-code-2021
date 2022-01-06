@@ -24,11 +24,42 @@ pub fn main() !void {
 
     while (true) {
         if (try handleFirstExplosion(root_value)) continue;
+        if (try handleFirstSplit(root_value)) continue;
         break;
     }
 
     printValue(root_value);
     std.debug.print("\n", .{});
+}
+
+fn handleFirstSplit(root_value: *Value) !bool {
+    var value_it = try ValueIterator.init(root_value);
+    return while (try value_it.next()) |value| {
+        var current_level: u32 = 0;
+        switch (value.*) {
+            .number => |number| {
+                if (number >= 10) {
+                    const float = @intToFloat(f32, number);
+                    const div = float / 2;
+                    var left = try allocator.create(Value);
+                    var right = try allocator.create(Value);
+                    left.* = .{ .number = @floatToInt(u32, @floor(div)) };
+                    right.* = .{ .number = @floatToInt(u32, @ceil(div)) };
+                    value.* = .{
+                        .pair = .{
+                            .lhs = left,
+                            .rhs = right,
+                            .level = current_level + 1,
+                        }
+                    };
+                    break true;
+                }
+            },
+            .pair => |pair| {
+                current_level = pair.level;
+            },
+        }
+    } else false;
 }
 
 fn handleFirstExplosion(root_value: *Value) !bool {
