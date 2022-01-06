@@ -1,33 +1,37 @@
 const std = @import("std");
+const test_input = @embedFile("day-18_test-input");
 
 var allocator: std.mem.Allocator = undefined;
-var numbers: std.ArrayList(*u32) = undefined;
 
 pub fn main() !void {
     std.debug.print("--- Day 18 ---\n", .{});
+}
 
+test "full thing" {
     var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer alloc.deinit();
-
     allocator = alloc.allocator();
-    numbers = std.ArrayList(*u32).init(allocator);
 
-    const input_1 = "[[[[4,3],4],4],[7,[[8,4],9]]]";
-    const input_2 = "[1,1]";
+    try execute(test_input);
+}
 
-    var value_1 = try parseValue(input_1);
-    var value_2 = try parseValue(input_2);
+fn execute(input: []const u8) !void {
+    var line_it = std.mem.tokenize(u8, input, "\n\r");
 
-    std.debug.print("value 1: ", .{});
-    printValue(value_1);
-    std.debug.print("\n", .{});
-    std.debug.print("value 2: ", .{});
-    printValue(value_2);
+    var current = try parseValue(line_it.next().?);
+
+    printValue(current);
     std.debug.print("\n", .{});
 
-    var root_value = try add(value_1, value_2);
+    while (line_it.next()) |line| {
+        if (line.len == 0) break;
+        var other = try parseValue(line);
+        current = try add(current, other);
+        try reduce(current);
 
-    try reduce(root_value);
+        printValue(current);
+        std.debug.print("\n", .{});
+    }
 }
 
 fn add(lhs: *Value, rhs: *Value) !*Value {
@@ -65,8 +69,6 @@ fn add(lhs: *Value, rhs: *Value) !*Value {
 
 fn reduce(root_value: *Value) !void {
     while (true) {
-        printValue(root_value);
-        std.debug.print("\n", .{});
         if (try handleFirstExplosion(root_value)) continue;
         if (try handleFirstSplit(root_value)) continue;
         break;
