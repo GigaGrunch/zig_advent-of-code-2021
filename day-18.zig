@@ -8,10 +8,10 @@ pub fn main() !void {
 }
 
 test "full thing" {
+    std.debug.print("\n", .{});
     var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer alloc.deinit();
     allocator = alloc.allocator();
-
     try execute(test_input);
 }
 
@@ -20,17 +20,24 @@ fn execute(input: []const u8) !void {
 
     var current = try parseValue(line_it.next().?);
 
+    std.debug.print("  ", .{});
     printValue(current);
     std.debug.print("\n", .{});
 
     while (line_it.next()) |line| {
-        if (line.len == 0) break;
-        var other = try parseValue(line);
-        current = try add(current, other);
-        try reduce(current);
+        if (line.len == 0) continue;
 
+        var other = try parseValue(line);
+        std.debug.print("+ ", .{});
+        printValue(other);
+        std.debug.print("\n", .{});
+
+        current = try add(current, other);
+        std.debug.print("= ", .{});
         printValue(current);
         std.debug.print("\n", .{});
+
+        try reduce(current);
     }
 }
 
@@ -69,8 +76,18 @@ fn add(lhs: *Value, rhs: *Value) !*Value {
 
 fn reduce(root_value: *Value) !void {
     while (true) {
-        if (try handleFirstExplosion(root_value)) continue;
-        if (try handleFirstSplit(root_value)) continue;
+        if (try handleFirstExplosion(root_value)) {
+            std.debug.print("x ", .{});
+            printValue(root_value);
+            std.debug.print("\n", .{});
+            continue;
+        }
+        if (try handleFirstSplit(root_value)) {
+            std.debug.print("| ", .{});
+            printValue(root_value);
+            std.debug.print("\n", .{});
+            continue;
+        }
         break;
     }
 }
