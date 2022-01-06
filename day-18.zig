@@ -17,14 +17,24 @@ pub fn main() !void {
     const input = "[7,[6,[5,[4,[3,2]]]]]";
     var input_it = StringIterator { .string = input };
 
-    var outer_value = try parseValue(&input_it, 0);
+    var root_value = try parseValue(&input_it, 0);
 
-    printValue(outer_value);
+    printValue(root_value);
     std.debug.print("\n", .{});
 
-    var value_it = try ValueIterator.init(outer_value);
+    while (true) {
+        if (try handleFirstExplosion(root_value)) continue;
+        break;
+    }
+
+    printValue(root_value);
+    std.debug.print("\n", .{});
+}
+
+fn handleFirstExplosion(root_value: *Value) !bool {
+    var value_it = try ValueIterator.init(root_value);
     var last_number: ?*u32 = null;
-    while (try value_it.next()) |value| {
+    return while (try value_it.next()) |value| {
         switch (value.*) {
             .number => |*number| {
                 last_number = number;
@@ -52,15 +62,11 @@ pub fn main() !void {
                     }
 
                     value.* = .{ .number = 0 };
-
-                    break;
+                    break true;
                 }
             },
         }
-    }
-
-    printValue(outer_value);
-    std.debug.print("\n", .{});
+    } else false;
 }
 
 fn printValue(value: *Value) void {
