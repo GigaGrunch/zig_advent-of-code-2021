@@ -12,11 +12,58 @@ pub fn main() !void {
     allocator = alloc.allocator();
     numbers = std.ArrayList(*u32).init(allocator);
 
-    const input = "[[[[[4,3],4],4],[7,[[8,4],9]]],[1,1]]";
-    var input_it = StringIterator { .string = input };
+    const input_1 = "[[[[4,3],4],4],[7,[[8,4],9]]]";
+    const input_2 = "[1,1]";
 
-    var root_value = try parseValue(&input_it, 0);
+    var value_1 = try parseValue(input_1);
+    var value_2 = try parseValue(input_2);
 
+    std.debug.print("value 1: ", .{});
+    printValue(value_1);
+    std.debug.print("\n", .{});
+    std.debug.print("value 2: ", .{});
+    printValue(value_2);
+    std.debug.print("\n", .{});
+
+    var root_value = try add(value_1, value_2);
+
+    try reduce(root_value);
+}
+
+fn add(lhs: *Value, rhs: *Value) !*Value {
+    var result = try allocator.create(Value);
+    result.* = .{
+        .pair = .{
+            .lhs = lhs,
+            .rhs = rhs,
+            .level = 0,
+        }
+    };
+
+    var lhs_it = try ValueIterator.init(lhs);
+    while (try lhs_it.next()) |value| {
+        switch (value.*) {
+            .number => { },
+            .pair => |*pair| {
+                pair.level += 1;
+            },
+        }
+    }
+
+    var rhs_it = try ValueIterator.init(rhs);
+    while (try rhs_it.next()) |value| {
+        switch (value.*) {
+            .number => { },
+            .pair => |*pair| {
+                pair.level += 1;
+            },
+        }
+    }
+
+    return result;
+}
+
+fn reduce(root_value: *Value) !void {
     while (true) {
         printValue(root_value);
         std.debug.print("\n", .{});
@@ -107,17 +154,21 @@ fn printValue(value: *Value) void {
     }
 }
 
-fn parseValue(it: *StringIterator, level: u32) std.mem.Allocator.Error!*Value {
-    var result = try allocator.create(Value);
+fn parseValue(string: []const u8) !*Value {
+    var it = StringIterator { .string = string };
+    return parseValueRecursive(&it, 0);
+}
 
+fn parseValueRecursive(it: *StringIterator, level: u32) std.mem.Allocator.Error!*Value {
+    var result = try allocator.create(Value);
     const char = it.next();
     switch (char) {
         '[' => {
             var pair: Pair = undefined;
             pair.level = level;
-            pair.lhs = try parseValue(it, level + 1);
+            pair.lhs = try parseValueRecursive(it, level + 1);
             it.gobble(',');
-            pair.rhs = try parseValue(it, level + 1);
+            pair.rhs = try parseValueRecursive(it, level + 1);
             it.gobble(']');
             result.* = .{ .pair = pair };
         },
