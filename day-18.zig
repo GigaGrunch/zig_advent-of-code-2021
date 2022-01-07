@@ -7,100 +7,6 @@ pub fn main() !void {
     std.debug.print("--- Day 18 ---\n", .{});
 }
 
-test "explode" {
-    std.debug.print("\n", .{});
-    var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    var string_buffer: [1024 * 1024]u8 = undefined;
-    defer alloc.deinit();
-    allocator = alloc.allocator();
-
-    const cases = [_]struct { input: []const u8, expected: []const u8 } {
-        .{ .input = "[[[[[9,8],1],2],3],4]", .expected = "[[[[0,9],2],3],4]" },
-        .{ .input = "[7,[6,[5,[4,[3,2]]]]]", .expected = "[7,[6,[5,[7,0]]]]" },
-        .{ .input = "[[6,[5,[4,[3,2]]]],1]", .expected = "[[6,[5,[7,0]]],3]" },
-        .{ .input = "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]", .expected = "[[3,[2,[8,0]]],[9,[5,[7,0]]]]" },
-    };
-
-    for (cases) |case, i| {
-        var root = try parseValue(case.input);
-        try reduce(root);
-        const result = try root.toString(string_buffer[0..]);
-        std.debug.print("case {}: {s} -> {s}\n", .{ i, case.input, result });
-        try std.testing.expectEqualStrings(case.expected, result);
-    }
-}
-
-test "add" {
-    std.debug.print("\n", .{});
-    var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    var string_buffer: [1024 * 1024]u8 = undefined;
-    defer alloc.deinit();
-    allocator = alloc.allocator();
-
-    const cases = [_]struct { lhs: []const u8, rhs: []const u8, expected: []const u8 } {
-        .{
-            .lhs = "[[[[4,3],4],4],[7,[[8,4],9]]]",
-            .rhs = "[1,1]",
-            .expected = "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]",
-        },
-        .{
-            .lhs = "[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]",
-            .rhs = "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]",
-            .expected = "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]",
-        },
-        .{
-            .lhs = "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]",
-            .rhs = "[[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]",
-            .expected = "[[[[6,7],[6,7]],[[7,7],[0,7]]],[[[8,7],[7,7]],[[8,8],[8,0]]]]",
-        },
-        .{
-            .lhs = "[[[[6,7],[6,7]],[[7,7],[0,7]]],[[[8,7],[7,7]],[[8,8],[8,0]]]]",
-            .rhs = "[[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]",
-            .expected = "[[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]",
-        },
-        .{
-            .lhs = "[[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]",
-            .rhs = "[7,[5,[[3,8],[1,4]]]]",
-            .expected = "[[[[7,7],[7,8]],[[9,5],[8,7]]],[[[6,8],[0,8]],[[9,9],[9,0]]]]",
-        },
-        .{
-            .lhs = "[[[[7,7],[7,8]],[[9,5],[8,7]]],[[[6,8],[0,8]],[[9,9],[9,0]]]]",
-            .rhs = "[[2,[2,2]],[8,[8,1]]]",
-            .expected = "[[[[6,6],[6,6]],[[6,0],[6,7]]],[[[7,7],[8,9]],[8,[8,1]]]]",
-        },
-        .{
-            .lhs = "[[[[6,6],[6,6]],[[6,0],[6,7]]],[[[7,7],[8,9]],[8,[8,1]]]]",
-            .rhs = "[2,9]",
-            .expected = "[[[[6,6],[7,7]],[[0,7],[7,7]]],[[[5,5],[5,6]],9]]"
-        },
-        .{
-            .lhs = "[[[[6,6],[7,7]],[[0,7],[7,7]]],[[[5,5],[5,6]],9]]",
-            .rhs = "[1,[[[9,3],9],[[9,0],[0,7]]]]",
-            .expected = "[[[[7,8],[6,7]],[[6,8],[0,8]]],[[[7,7],[5,0]],[[5,5],[5,6]]]]",
-        },
-        .{
-            .lhs = "[[[[7,8],[6,7]],[[6,8],[0,8]]],[[[7,7],[5,0]],[[5,5],[5,6]]]]",
-            .rhs = "[[[5,[7,4]],7],1]",
-            .expected = "[[[[7,7],[7,7]],[[8,7],[8,7]]],[[[7,0],[7,7]],9]]",
-        },
-        .{
-            .lhs = "[[[[7,7],[7,7]],[[8,7],[8,7]]],[[[7,0],[7,7]],9]]",
-            .rhs = "[[[[4,2],2],6],[8,7]]",
-            .expected = "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]",
-        },
-    };
-
-    for (cases) |case, i| {
-        var lhs = try parseValue(case.lhs);
-        var rhs = try parseValue(case.rhs);
-        var root = try add(lhs, rhs);
-        try reduce(root);
-        const result = try root.toString(string_buffer[0..]);
-        std.debug.print("case {}: {s} + {s} -> {s}\n", .{ i, case.lhs, case.rhs, result });
-        try std.testing.expectEqualStrings(case.expected, result);
-    }
-}
-
 fn execute(input: []const u8) !void {
     var string_buffer: [1024 * 1024]u8 = undefined;
 
@@ -361,3 +267,97 @@ const StringIterator = struct {
         }
     }
 };
+
+test "explode" {
+    std.debug.print("\n", .{});
+    var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var string_buffer: [1024 * 1024]u8 = undefined;
+    defer alloc.deinit();
+    allocator = alloc.allocator();
+
+    const cases = [_]struct { input: []const u8, expected: []const u8 } {
+        .{ .input = "[[[[[9,8],1],2],3],4]", .expected = "[[[[0,9],2],3],4]" },
+        .{ .input = "[7,[6,[5,[4,[3,2]]]]]", .expected = "[7,[6,[5,[7,0]]]]" },
+        .{ .input = "[[6,[5,[4,[3,2]]]],1]", .expected = "[[6,[5,[7,0]]],3]" },
+        .{ .input = "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]", .expected = "[[3,[2,[8,0]]],[9,[5,[7,0]]]]" },
+    };
+
+    for (cases) |case, i| {
+        var root = try parseValue(case.input);
+        try reduce(root);
+        const result = try root.toString(string_buffer[0..]);
+        std.debug.print("case {}: {s} -> {s}\n", .{ i, case.input, result });
+        try std.testing.expectEqualStrings(case.expected, result);
+    }
+}
+
+test "add" {
+    std.debug.print("\n", .{});
+    var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var string_buffer: [1024 * 1024]u8 = undefined;
+    defer alloc.deinit();
+    allocator = alloc.allocator();
+
+    const cases = [_]struct { lhs: []const u8, rhs: []const u8, expected: []const u8 } {
+        .{
+            .lhs = "[[[[4,3],4],4],[7,[[8,4],9]]]",
+            .rhs = "[1,1]",
+            .expected = "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]",
+        },
+        .{
+            .lhs = "[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]",
+            .rhs = "[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]",
+            .expected = "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]",
+        },
+        .{
+            .lhs = "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]",
+            .rhs = "[[2,[[0,8],[3,4]]],[[[6,7],1],[7,[1,6]]]]",
+            .expected = "[[[[6,7],[6,7]],[[7,7],[0,7]]],[[[8,7],[7,7]],[[8,8],[8,0]]]]",
+        },
+        .{
+            .lhs = "[[[[6,7],[6,7]],[[7,7],[0,7]]],[[[8,7],[7,7]],[[8,8],[8,0]]]]",
+            .rhs = "[[[[2,4],7],[6,[0,5]]],[[[6,8],[2,8]],[[2,1],[4,5]]]]",
+            .expected = "[[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]",
+        },
+        .{
+            .lhs = "[[[[7,0],[7,7]],[[7,7],[7,8]]],[[[7,7],[8,8]],[[7,7],[8,7]]]]",
+            .rhs = "[7,[5,[[3,8],[1,4]]]]",
+            .expected = "[[[[7,7],[7,8]],[[9,5],[8,7]]],[[[6,8],[0,8]],[[9,9],[9,0]]]]",
+        },
+        .{
+            .lhs = "[[[[7,7],[7,8]],[[9,5],[8,7]]],[[[6,8],[0,8]],[[9,9],[9,0]]]]",
+            .rhs = "[[2,[2,2]],[8,[8,1]]]",
+            .expected = "[[[[6,6],[6,6]],[[6,0],[6,7]]],[[[7,7],[8,9]],[8,[8,1]]]]",
+        },
+        .{
+            .lhs = "[[[[6,6],[6,6]],[[6,0],[6,7]]],[[[7,7],[8,9]],[8,[8,1]]]]",
+            .rhs = "[2,9]",
+            .expected = "[[[[6,6],[7,7]],[[0,7],[7,7]]],[[[5,5],[5,6]],9]]"
+        },
+        .{
+            .lhs = "[[[[6,6],[7,7]],[[0,7],[7,7]]],[[[5,5],[5,6]],9]]",
+            .rhs = "[1,[[[9,3],9],[[9,0],[0,7]]]]",
+            .expected = "[[[[7,8],[6,7]],[[6,8],[0,8]]],[[[7,7],[5,0]],[[5,5],[5,6]]]]",
+        },
+        .{
+            .lhs = "[[[[7,8],[6,7]],[[6,8],[0,8]]],[[[7,7],[5,0]],[[5,5],[5,6]]]]",
+            .rhs = "[[[5,[7,4]],7],1]",
+            .expected = "[[[[7,7],[7,7]],[[8,7],[8,7]]],[[[7,0],[7,7]],9]]",
+        },
+        .{
+            .lhs = "[[[[7,7],[7,7]],[[8,7],[8,7]]],[[[7,0],[7,7]],9]]",
+            .rhs = "[[[[4,2],2],6],[8,7]]",
+            .expected = "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]",
+        },
+    };
+
+    for (cases) |case, i| {
+        var lhs = try parseValue(case.lhs);
+        var rhs = try parseValue(case.rhs);
+        var root = try add(lhs, rhs);
+        try reduce(root);
+        const result = try root.toString(string_buffer[0..]);
+        std.debug.print("case {}: {s} + {s} -> {s}\n", .{ i, case.lhs, case.rhs, result });
+        try std.testing.expectEqualStrings(case.expected, result);
+    }
+}
