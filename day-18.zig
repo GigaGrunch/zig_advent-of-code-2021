@@ -1,4 +1,5 @@
 const std = @import("std");
+const real_input = @embedFile("day-18_real-input");
 const test_input_1 = @embedFile("day-18_test-input-1");
 const test_input_2 = @embedFile("day-18_test-input-2");
 
@@ -6,6 +7,8 @@ var allocator: std.mem.Allocator = undefined;
 
 pub fn main() !void {
     std.debug.print("--- Day 18 ---\n", .{});
+    const result = try execute(real_input);
+    std.debug.print("magnitude is {}\n", .{ result });
 }
 
 fn execute(input: []const u8) !u32 {
