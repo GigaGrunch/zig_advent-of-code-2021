@@ -7,8 +7,12 @@ var allocator: std.mem.Allocator = undefined;
 
 pub fn main() !void {
     std.debug.print("--- Day 18 ---\n", .{});
-    const result = try totalMagnitude(real_input);
-    std.debug.print("magnitude is {}\n", .{ result });
+
+    const total_magnitude = try totalMagnitude(real_input);
+    std.debug.print("total magnitude is {}\n", .{ total_magnitude });
+
+    const highest_magnitude = try highestMagnitude(real_input);
+    std.debug.print("highest magnitude is {}\n", .{ highest_magnitude });
 }
 
 fn highestMagnitude(input: []const u8) !u32 {
