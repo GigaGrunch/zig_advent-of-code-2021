@@ -182,6 +182,13 @@ const Node = struct {
         return result;
     }
 
+    fn magnitude(node: *Node) u32 {
+        return switch (node.value) {
+            .number => |number| number,
+            .pair => |pair| 3 * pair.left.magnitude() + 2 * pair.right.magnitude(),
+        };
+    }
+
     fn toString(node: *Node, buffer: []u8) ![]const u8 {
         var alloc = std.heap.FixedBufferAllocator.init(buffer);
         var string = std.ArrayList(u8).init(alloc.allocator());
@@ -354,6 +361,30 @@ test "add" {
         const result = try root.toString(string_buffer[0..]);
         std.debug.print("case {}: {s} + {s} -> {s}\n", .{ i, case.lhs, case.rhs, result });
         try std.testing.expectEqualStrings(case.expected, result);
+    }
+}
+
+test "magnitude" {
+    var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer alloc.deinit();
+    allocator = alloc.allocator();
+
+    const cases = [_]struct { input: []const u8, expected: u32 } {
+        .{ .input = "[9,1]", .expected = 29 },
+        .{ .input = "[1,9]", .expected = 21 },
+        .{ .input = "[[9,1],[1,9]]", .expected = 129 },
+        .{ .input = "[[1,2],[[3,4],5]]", .expected = 143 },
+        .{ .input = "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]", .expected = 1384 },
+        .{ .input = "[[[[1,1],[2,2]],[3,3]],[4,4]]", .expected = 445 },
+        .{ .input = "[[[[3,0],[5,3]],[4,4]],[5,5]]", .expected = 791 },
+        .{ .input = "[[[[5,0],[7,4]],[5,5]],[6,6]]", .expected = 1137 },
+        .{ .input = "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]", .expected = 3488 },
+    };
+
+    for (cases) |case| {
+        const root = try parseValue(case.input);
+        const result = root.magnitude();
+        try std.testing.expectEqual(case.expected, result);
     }
 }
 
