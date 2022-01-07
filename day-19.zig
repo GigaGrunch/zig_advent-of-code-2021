@@ -11,25 +11,38 @@ test "test-input" {
     var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer alloc.deinit();
 
-    // var scanners = std.ArrayList(Scanner).init(alloc.allocator());
+    var scanners = std.ArrayList(Scanner).init(alloc.allocator());
     var beacons = std.ArrayList(Pos).init(alloc.allocator());
-
-    var scanner_count: u32 = 0;
+    var first_beacons = std.ArrayList(usize).init(alloc.allocator());
+    var current_beacon: usize = 0;
 
     var line_it = std.mem.tokenize(u8, input, "\n\r");
     while (line_it.next()) |line| {
         if (line.len == 0) continue;
 
         if (std.mem.startsWith(u8, line, "--- scanner ")) {
-            scanner_count += 1;
+            try first_beacons.append(current_beacon);
         }
         else {
             const beacon = try parseBeacon(line);
             try beacons.append(beacon);
+            current_beacon += 1;
         }
     }
 
-    try std.testing.expectEqual(@as(u32, 5), scanner_count);
+    for (first_beacons.items) |start, i| {
+        if (i < first_beacons.items.len - 1) {
+            const end = first_beacons.items[i + 1];
+            const scanner = Scanner { .beacons = beacons.items[start..end] };
+            try scanners.append(scanner);
+        }
+        else {
+            const scanner = Scanner { .beacons = beacons.items[start..] };
+            try scanners.append(scanner);
+        }
+    }
+
+    try std.testing.expectEqual(@as(usize, 5), scanners.items.len);
     try std.testing.expectEqual(@as(usize, 127), beacons.items.len);
 }
 
@@ -53,7 +66,7 @@ test "parseBeacon" {
 }
 
 const Scanner = struct {
-    beacons: []*Pos,
+    beacons: []Pos,
 };
 
 const Pos = struct {
