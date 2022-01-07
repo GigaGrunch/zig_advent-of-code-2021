@@ -7,25 +7,19 @@ pub fn main() !void {
     std.debug.print("--- Day 18 ---\n", .{});
 }
 
-fn execute(input: []const u8) !void {
-    var string_buffer: [1024 * 1024]u8 = undefined;
-
+fn addList(input: []const u8) !*Node {
     var line_it = std.mem.tokenize(u8, input, "\n\r");
     var current = try parseValue(line_it.next().?);
-
-    std.debug.print("  {s}\n", .{ current.toString(string_buffer[0..]) });
 
     while (line_it.next()) |line| {
         if (line.len == 0) continue;
 
         var other = try parseValue(line);
-        std.debug.print("+ {s}\n", .{ other.toString(string_buffer[0..]) });
-
         current = try add(current, other);
         try reduce(current);
-
-        std.debug.print("= {s}\n", .{ current.toString(string_buffer[0..]) });
     }
+
+    return current;
 }
 
 fn add(lhs: *Node, rhs: *Node) !*Node {
@@ -360,4 +354,14 @@ test "add" {
         std.debug.print("case {}: {s} + {s} -> {s}\n", .{ i, case.lhs, case.rhs, result });
         try std.testing.expectEqualStrings(case.expected, result);
     }
+}
+
+test "addList" {
+    var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var buffer: [1024 * 1024]u8 = undefined;
+    defer alloc.deinit();
+    allocator = alloc.allocator();
+    const result = try addList(test_input);
+    const expected = "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]";
+    try std.testing.expectEqualStrings(expected, try result.toString(buffer[0..]));
 }
