@@ -33,104 +33,109 @@ fn execute(input: []const u8) !void {
         std.debug.print("\n", .{});
 
         current = try add(current, other);
+        try reduce(current);
+
         std.debug.print("= ", .{});
         printValue(current);
         std.debug.print("\n", .{});
-
-        try reduce(current);
     }
 }
 
-fn add(lhs: *Value, rhs: *Value) !*Value {
-    var result = try allocator.create(Value);
+fn add(lhs: *Node, rhs: *Node) !*Node {
+    var result = try allocator.create(Node);
     result.* = .{
-        .pair = .{
-            .parent = null,
-            .lhs = lhs,
-            .rhs = rhs,
+        .parent = null,
+        .value = .{
+            .pair = .{
+                .left = lhs,
+                .right = rhs,
+            }
         }
     };
-    lhs.setParent(&result.pair);
-    rhs.setParent(&result.pair);
+
+    lhs.parent = result;
+    rhs.parent = result;
+
     return result;
 }
 
-fn reduce(root_value: *Value) !void {
+fn reduce(root: *Node) !void {
     while (true) {
-        if (try handleFirstExplosion(root_value)) {
-            std.debug.print("x ", .{});
-            printValue(root_value);
-            std.debug.print("\n", .{});
+        if (try handleFirstExplosion(root)) {
             continue;
         }
-        if (try handleFirstSplit(root_value)) {
-            std.debug.print("| ", .{});
-            printValue(root_value);
-            std.debug.print("\n", .{});
+        if (try handleFirstSplit(root)) {
             continue;
         }
         break;
     }
 }
 
-fn handleFirstSplit(root_value: *Value) !bool {
-    var value_it = try ValueIterator.init(root_value);
-    var current_pair: ?*Pair = undefined;
-    return while (try value_it.next()) |value| {
-        switch (value.*) {
+fn handleFirstSplit(root: *Node) !bool {
+    var it = try TreeIterator.init(root);
+    return while (try it.next()) |node| {
+        switch (node.value) {
             .number => |number| {
                 if (number >= 10) {
                     const float = @intToFloat(f32, number);
                     const div = float / 2;
-                    var left = try allocator.create(Value);
-                    var right = try allocator.create(Value);
-                    left.* = .{ .number = @floatToInt(u32, @floor(div)) };
-                    right.* = .{ .number = @floatToInt(u32, @ceil(div)) };
-                    value.* = .{
+
+                    var left = try allocator.create(Node);
+                    left.* = .{
+                        .parent = node.parent,
+                        .value = .{ .number = @floatToInt(u32, @floor(div)) },
+                    };
+
+                    var right = try allocator.create(Node);
+                    right.* = .{
+                        .parent = node.parent,
+                        .value = .{ .number = @floatToInt(u32, @ceil(div)) }
+                    };
+
+                    node.value = .{
                         .pair = .{
-                            .parent = current_pair,
-                            .lhs = left,
-                            .rhs = right,
+                            .left = left,
+                            .right = right,
                         }
                     };
+
                     break true;
                 }
             },
-            .pair => |*pair| {
-                current_pair = pair;
-            },
+            .pair => { },
         }
     } else false;
 }
 
-fn handleFirstExplosion(root_value: *Value) !bool {
-    var value_it = try ValueIterator.init(root_value);
+fn handleFirstExplosion(root: *Node) !bool {
+    var it = try TreeIterator.init(root);
     var last_number: ?*u32 = null;
-    return while (try value_it.next()) |value| {
-        switch (value.*) {
+
+    return while (try it.next()) |node| {
+        switch (node.value) {
             .number => |*number| {
                 last_number = number;
             },
             .pair => |pair| {
-                if (pair.level() >= 4 and pair.canExplode()) {
-                    _ = (try value_it.next()).?;
-                    _ = (try value_it.next()).?;
+                if (node.level() >= 4 and pair.canExplode()) {
+                    _ = (try it.next()).?;
+                    _ = (try it.next()).?;
 
                     if (last_number) |number| {
-                        number.* += pair.lhs.number;
+                        number.* += pair.left.value.number;
                     }
 
-                    while (try value_it.next()) |next_value| {
-                        switch (next_value.*) {
+                    while (try it.next()) |next| {
+                        switch (next.value) {
                             .number => |*number| {
-                                number.* += pair.rhs.number;
+                                number.* += pair.right.value.number;
                                 break;
                             },
                             .pair => { },
                         }
                     }
 
-                    value.* = .{ .number = 0 };
+                    node.value = .{ .number = 0 };
                     break true;
                 }
             },
@@ -138,47 +143,50 @@ fn handleFirstExplosion(root_value: *Value) !bool {
     } else false;
 }
 
-fn printValue(value: *Value) void {
-    switch (value.*) {
+fn printValue(root: *Node) void {
+    switch (root.value) {
         .number => |number| std.debug.print("{}", .{ number }),
         .pair => |pair| {
             std.debug.print("[", .{});
-            printValue(pair.lhs);
+            printValue(pair.left);
             std.debug.print(",", .{});
-            printValue(pair.rhs);
+            printValue(pair.right);
             std.debug.print("]", .{});
         }
     }
 }
 
-fn parseValue(string: []const u8) !*Value {
+fn parseValue(string: []const u8) !*Node {
     var it = StringIterator { .string = string };
-    return parseValueRecursive(&it);
+    return parseValueRecursive(&it, null);
 }
 
-fn parseValueRecursive(it: *StringIterator) std.mem.Allocator.Error!*Value {
-    var result = try allocator.create(Value);
+fn parseValueRecursive(it: *StringIterator, parent: ?*Node) std.mem.Allocator.Error!*Node {
+    var result = try allocator.create(Node);
     const char = it.next();
+
     switch (char) {
         '[' => {
-            var lhs = try parseValueRecursive(it);
+            var left = try parseValueRecursive(it, result);
             it.gobble(',');
-            var rhs = try parseValueRecursive(it);
+            var right = try parseValueRecursive(it, result);
             it.gobble(']');
 
             result.* = .{
-                .pair = .{
-                    .parent = null,
-                    .lhs = lhs,
-                    .rhs = rhs,
-                }
+                .parent = parent,
+                .value = .{
+                    .pair = .{
+                        .left = left,
+                        .right = right,
+                    }
+                },
             };
-
-            lhs.setParent(&result.pair);
-            rhs.setParent(&result.pair);
         },
         '0'...'9' => {
-            result.* = .{ .number = char - '0' };
+            result.* = .{
+                .parent = parent,
+                .value = .{ .number = char - '0' },
+            };
         },
         else => {
             std.debug.print("nothing implemented for {c}\n", .{ char });
@@ -189,25 +197,19 @@ fn parseValueRecursive(it: *StringIterator) std.mem.Allocator.Error!*Value {
     return result;
 }
 
-const ValueIterator = struct {
-    stack: std.ArrayList(*Value),
+const Node = struct {
+    parent: ?*Node,
+    value: Value,
 
-    fn init(first_value: *Value) !ValueIterator {
-        var it = ValueIterator { .stack = std.ArrayList(*Value).init(allocator) };
-        try it.stack.append(first_value);
-        return it;
-    }
+    fn level(node: Node) u32 {
+        var parent = node.parent;
+        var result: u32 = 0;
 
-    fn next(it: *ValueIterator) !?*Value {
-        if (it.stack.items.len == 0) return null;
-        var result = it.stack.pop();
-        switch (result.*) {
-            .number => { },
-            .pair => |pair| {
-                try it.stack.append(pair.rhs);
-                try it.stack.append(pair.lhs);
-            }
+        while (parent != null) {
+            parent = parent.?.parent;
+            result += 1;
         }
+
         return result;
     }
 };
@@ -217,32 +219,37 @@ const ValueType = enum { number, pair };
 const Value = union(ValueType) {
     number: u32,
     pair: Pair,
-
-    fn setParent(value: *Value, parent: *Pair) void {
-        switch (value.*) {
-            .number => { },
-            .pair => |*pair| pair.parent = parent,
-        }
-    }
 };
 
 const Pair = struct {
-    parent: ?*Pair,
-    lhs: *Value,
-    rhs: *Value,
+    left: *Node,
+    right: *Node,
 
     fn canExplode(pair: Pair) bool {
-        const lhs_number = @as(ValueType, pair.lhs.*) == .number;
-        const rhs_number = @as(ValueType, pair.rhs.*) == .number;
+        const lhs_number = @as(ValueType, pair.left.value) == .number;
+        const rhs_number = @as(ValueType, pair.right.value) == .number;
         return lhs_number and rhs_number;
     }
+};
 
-    fn level(pair: Pair) u32 {
-        var result: u32 = 0;
-        var parent = pair.parent;
-        while (parent != null) {
-            parent = parent.?.parent;
-            result += 1;
+const TreeIterator = struct {
+    stack: std.ArrayList(*Node),
+
+    fn init(root: *Node) !@This() {
+        var it = @This() { .stack = std.ArrayList(*Node).init(allocator) };
+        try it.stack.append(root);
+        return it;
+    }
+
+    fn next(it: *@This()) !?*Node {
+        if (it.stack.items.len == 0) return null;
+        var result = it.stack.pop();
+        switch (result.value) {
+            .number => { },
+            .pair => |pair| {
+                try it.stack.append(pair.right);
+                try it.stack.append(pair.left);
+            }
         }
         return result;
     }
