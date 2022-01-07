@@ -8,6 +8,15 @@ pub fn main() !void {
     std.debug.print("--- Day 18 ---\n", .{});
 }
 
+fn execute(input: []const u8) !u32 {
+    var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer alloc.deinit();
+    allocator = alloc.allocator();
+
+    const add_result = try addList(input);
+    return add_result.magnitude();
+}
+
 fn addList(input: []const u8) !*Node {
     var line_it = std.mem.tokenize(u8, input, "\n\r");
     var current = try parseValue(line_it.next().?);
@@ -379,6 +388,7 @@ test "magnitude" {
         .{ .input = "[[[[3,0],[5,3]],[4,4]],[5,5]]", .expected = 791 },
         .{ .input = "[[[[5,0],[7,4]],[5,5]],[6,6]]", .expected = 1137 },
         .{ .input = "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]", .expected = 3488 },
+        .{ .input = "[[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]", .expected = 4140 },
     };
 
     for (cases) |case| {
@@ -404,5 +414,17 @@ test "addList" {
         std.debug.print("case {}\n", .{ i });
         const result = try addList(case.input);
         try std.testing.expectEqualStrings(case.expected, try result.toString(buffer[0..]));
+    }
+}
+
+test "full integration" {
+    const cases = [_]struct { input: []const u8, expected: u32 } {
+        .{ .input = test_input_1, .expected = 3488 },
+        .{ .input = test_input_2, .expected = 4140 },
+    };
+
+    for (cases) |case| {
+        const result = try execute(case.input);
+        try std.testing.expectEqual(case.expected, result);
     }
 }
