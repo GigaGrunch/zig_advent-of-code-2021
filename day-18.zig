@@ -1,5 +1,6 @@
 const std = @import("std");
-const test_input = @embedFile("day-18_test-input");
+const test_input_1 = @embedFile("day-18_test-input-1");
+const test_input_2 = @embedFile("day-18_test-input-2");
 
 var allocator: std.mem.Allocator = undefined;
 
@@ -357,11 +358,20 @@ test "add" {
 }
 
 test "addList" {
+    std.debug.print("\n", .{});
     var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     var buffer: [1024 * 1024]u8 = undefined;
     defer alloc.deinit();
     allocator = alloc.allocator();
-    const result = try addList(test_input);
-    const expected = "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]";
-    try std.testing.expectEqualStrings(expected, try result.toString(buffer[0..]));
+
+    const cases = [_]struct { input: []const u8, expected: []const u8 } {
+        .{ .input = test_input_1, .expected = "[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]" },
+        .{ .input = test_input_2, .expected = "[[[[6,6],[7,6]],[[7,7],[7,0]]],[[[7,7],[7,7]],[[7,8],[9,9]]]]" },
+    };
+
+    for (cases) |case, i| {
+        std.debug.print("case {}\n", .{ i });
+        const result = try addList(case.input);
+        try std.testing.expectEqualStrings(case.expected, try result.toString(buffer[0..]));
+    }
 }
