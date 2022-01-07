@@ -7,11 +7,46 @@ var allocator: std.mem.Allocator = undefined;
 
 pub fn main() !void {
     std.debug.print("--- Day 18 ---\n", .{});
-    const result = try execute(real_input);
+    const result = try totalMagnitude(real_input);
     std.debug.print("magnitude is {}\n", .{ result });
 }
 
-fn execute(input: []const u8) !u32 {
+fn highestMagnitude(input: []const u8) !u32 {
+    var outer_alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer outer_alloc.deinit();
+
+    var lines = std.ArrayList([]const u8).init(outer_alloc.allocator());
+    var line_it = std.mem.tokenize(u8, input, "\n\r");
+    while (line_it.next()) |line| {
+        if (line.len == 0) continue;
+        try lines.append(line);
+    }
+
+    var highest_magnitude: u32 = 0;
+
+    var lhs: usize = 0;
+    while (lhs < lines.items.len):(lhs += 1) {
+        var rhs: usize = 0;
+        while (rhs < lines.items.len):(rhs += 1) {
+            if (lhs == rhs) continue;
+
+            var inner_alloc = std.heap.ArenaAllocator.init(outer_alloc.allocator());
+            defer inner_alloc.deinit();
+            allocator = inner_alloc.allocator();
+
+            var left = try parseValue(lines.items[lhs]);
+            var right = try parseValue(lines.items[rhs]);
+
+            const result = try add(left, right);
+            try reduce(result);
+            highest_magnitude = @maximum(result.magnitude(), highest_magnitude);
+        }
+    }
+
+    return highest_magnitude;
+}
+
+fn totalMagnitude(input: []const u8) !u32 {
     var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer alloc.deinit();
     allocator = alloc.allocator();
@@ -420,14 +455,20 @@ test "addList" {
     }
 }
 
-test "full integration" {
+test "totalMagnitude" {
     const cases = [_]struct { input: []const u8, expected: u32 } {
         .{ .input = test_input_1, .expected = 3488 },
         .{ .input = test_input_2, .expected = 4140 },
     };
 
     for (cases) |case| {
-        const result = try execute(case.input);
+        const result = try totalMagnitude(case.input);
         try std.testing.expectEqual(case.expected, result);
     }
+}
+
+test "highestMagnitude" {
+    const expected: u32 = 3993;
+    const result = try highestMagnitude(test_input_2);
+    try std.testing.expectEqual(expected, result);
 }
