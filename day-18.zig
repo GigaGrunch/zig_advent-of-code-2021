@@ -69,13 +69,13 @@ fn handleFirstSplit(root: *Node) !bool {
 
                     var left = try allocator.create(Node);
                     left.* = .{
-                        .parent = node.parent,
+                        .parent = node,
                         .value = .{ .number = @floatToInt(u32, @floor(div)) },
                     };
 
                     var right = try allocator.create(Node);
                     right.* = .{
-                        .parent = node.parent,
+                        .parent = node,
                         .value = .{ .number = @floatToInt(u32, @ceil(div)) }
                     };
 
