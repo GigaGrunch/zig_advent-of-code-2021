@@ -7,12 +7,27 @@ pub fn main() !void {
     std.debug.print("--- Day 18 ---\n", .{});
 }
 
-test "full thing" {
+test "explode" {
     std.debug.print("\n", .{});
     var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    var string_buffer: [1024 * 1024]u8 = undefined;
     defer alloc.deinit();
     allocator = alloc.allocator();
-    try execute(test_input);
+
+    const cases = [_]struct { input: []const u8, expected: []const u8 } {
+        .{ .input = "[[[[[9,8],1],2],3],4]", .expected = "[[[[0,9],2],3],4]" },
+        .{ .input = "[7,[6,[5,[4,[3,2]]]]]", .expected = "[7,[6,[5,[7,0]]]]" },
+        .{ .input = "[[6,[5,[4,[3,2]]]],1]", .expected = "[[6,[5,[7,0]]],3]" },
+        .{ .input = "[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]", .expected = "[[3,[2,[8,0]]],[9,[5,[7,0]]]]" },
+    };
+
+    for (cases) |case, i| {
+        var root = try parseValue(case.input);
+        try reduce(root);
+        const result = try root.toString(string_buffer[0..]);
+        std.debug.print("case {}: {s} -> {s}\n", .{ i, case.input, result });
+        try std.testing.expectEqualStrings(case.expected, result);
+    }
 }
 
 fn execute(input: []const u8) !void {
