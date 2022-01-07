@@ -47,30 +47,8 @@ fn add(lhs: *Value, rhs: *Value) !*Value {
         .pair = .{
             .lhs = lhs,
             .rhs = rhs,
-            .level = 0,
         }
     };
-
-    var lhs_it = try ValueIterator.init(lhs);
-    while (try lhs_it.next()) |value| {
-        switch (value.*) {
-            .number => { },
-            .pair => |*pair| {
-                pair.level += 1;
-            },
-        }
-    }
-
-    var rhs_it = try ValueIterator.init(rhs);
-    while (try rhs_it.next()) |value| {
-        switch (value.*) {
-            .number => { },
-            .pair => |*pair| {
-                pair.level += 1;
-            },
-        }
-    }
-
     return result;
 }
 
@@ -94,7 +72,6 @@ fn reduce(root_value: *Value) !void {
 
 fn handleFirstSplit(root_value: *Value) !bool {
     var value_it = try ValueIterator.init(root_value);
-    var current_level: u32 = 0;
     return while (try value_it.next()) |value| {
         switch (value.*) {
             .number => |number| {
@@ -109,15 +86,12 @@ fn handleFirstSplit(root_value: *Value) !bool {
                         .pair = .{
                             .lhs = left,
                             .rhs = right,
-                            .level = current_level + 1,
                         }
                     };
                     break true;
                 }
             },
-            .pair => |pair| {
-                current_level = pair.level;
-            },
+            .pair => { },
         }
     } else false;
 }
@@ -131,7 +105,7 @@ fn handleFirstExplosion(root_value: *Value) !bool {
                 last_number = number;
             },
             .pair => |pair| {
-                if (pair.shouldExplode()) {
+                if (value_it.current_level >= 4 and pair.canExplode()) {
                     _ = (try value_it.next()).?;
                     _ = (try value_it.next()).?;
 
@@ -163,10 +137,7 @@ fn printValue(value: *Value) void {
         .pair => |pair| {
             std.debug.print("[", .{});
             printValue(pair.lhs);
-
-            if (pair.shouldExplode()) std.debug.print("!", .{})
-            else std.debug.print(",", .{});
-
+            std.debug.print(",", .{});
             printValue(pair.rhs);
             std.debug.print("]", .{});
         }
@@ -184,7 +155,6 @@ fn parseValueRecursive(it: *StringIterator, level: u32) std.mem.Allocator.Error!
     switch (char) {
         '[' => {
             var pair: Pair = undefined;
-            pair.level = level;
             pair.lhs = try parseValueRecursive(it, level + 1);
             it.gobble(',');
             pair.rhs = try parseValueRecursive(it, level + 1);
@@ -205,6 +175,7 @@ fn parseValueRecursive(it: *StringIterator, level: u32) std.mem.Allocator.Error!
 
 const ValueIterator = struct {
     stack: std.ArrayList(*Value),
+    current_level: u32 = 0,
 
     fn init(first_value: *Value) !ValueIterator {
         var it = ValueIterator { .stack = std.ArrayList(*Value).init(allocator) };
@@ -236,12 +207,11 @@ const Value = union(ValueType) {
 const Pair = struct {
     lhs: *Value,
     rhs: *Value,
-    level: u32,
 
-    fn shouldExplode(pair: Pair) bool {
+    fn canExplode(pair: Pair) bool {
         const lhs_number = @as(ValueType, pair.lhs.*) == .number;
         const rhs_number = @as(ValueType, pair.rhs.*) == .number;
-        return lhs_number and rhs_number and pair.level > 3;
+        return lhs_number and rhs_number;
     }
 };
 
