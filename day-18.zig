@@ -45,10 +45,13 @@ fn add(lhs: *Value, rhs: *Value) !*Value {
     var result = try allocator.create(Value);
     result.* = .{
         .pair = .{
+            .parent = null,
             .lhs = lhs,
             .rhs = rhs,
         }
     };
+    lhs.setParent(&result.pair);
+    rhs.setParent(&result.pair);
     return result;
 }
 
@@ -72,6 +75,7 @@ fn reduce(root_value: *Value) !void {
 
 fn handleFirstSplit(root_value: *Value) !bool {
     var value_it = try ValueIterator.init(root_value);
+    var current_pair: ?*Pair = undefined;
     return while (try value_it.next()) |value| {
         switch (value.*) {
             .number => |number| {
@@ -84,6 +88,7 @@ fn handleFirstSplit(root_value: *Value) !bool {
                     right.* = .{ .number = @floatToInt(u32, @ceil(div)) };
                     value.* = .{
                         .pair = .{
+                            .parent = current_pair,
                             .lhs = left,
                             .rhs = right,
                         }
@@ -91,7 +96,9 @@ fn handleFirstSplit(root_value: *Value) !bool {
                     break true;
                 }
             },
-            .pair => { },
+            .pair => |*pair| {
+                current_pair = pair;
+            },
         }
     } else false;
 }
@@ -105,7 +112,7 @@ fn handleFirstExplosion(root_value: *Value) !bool {
                 last_number = number;
             },
             .pair => |pair| {
-                if (value_it.current_level >= 4 and pair.canExplode()) {
+                if (pair.level() >= 4 and pair.canExplode()) {
                     _ = (try value_it.next()).?;
                     _ = (try value_it.next()).?;
 
@@ -146,20 +153,29 @@ fn printValue(value: *Value) void {
 
 fn parseValue(string: []const u8) !*Value {
     var it = StringIterator { .string = string };
-    return parseValueRecursive(&it, 0);
+    return parseValueRecursive(&it);
 }
 
-fn parseValueRecursive(it: *StringIterator, level: u32) std.mem.Allocator.Error!*Value {
+fn parseValueRecursive(it: *StringIterator) std.mem.Allocator.Error!*Value {
     var result = try allocator.create(Value);
     const char = it.next();
     switch (char) {
         '[' => {
-            var pair: Pair = undefined;
-            pair.lhs = try parseValueRecursive(it, level + 1);
+            var lhs = try parseValueRecursive(it);
             it.gobble(',');
-            pair.rhs = try parseValueRecursive(it, level + 1);
+            var rhs = try parseValueRecursive(it);
             it.gobble(']');
-            result.* = .{ .pair = pair };
+
+            result.* = .{
+                .pair = .{
+                    .parent = null,
+                    .lhs = lhs,
+                    .rhs = rhs,
+                }
+            };
+
+            lhs.setParent(&result.pair);
+            rhs.setParent(&result.pair);
         },
         '0'...'9' => {
             result.* = .{ .number = char - '0' };
@@ -175,7 +191,6 @@ fn parseValueRecursive(it: *StringIterator, level: u32) std.mem.Allocator.Error!
 
 const ValueIterator = struct {
     stack: std.ArrayList(*Value),
-    current_level: u32 = 0,
 
     fn init(first_value: *Value) !ValueIterator {
         var it = ValueIterator { .stack = std.ArrayList(*Value).init(allocator) };
@@ -202,9 +217,17 @@ const ValueType = enum { number, pair };
 const Value = union(ValueType) {
     number: u32,
     pair: Pair,
+
+    fn setParent(value: *Value, parent: *Pair) void {
+        switch (value.*) {
+            .number => { },
+            .pair => |*pair| pair.parent = parent,
+        }
+    }
 };
 
 const Pair = struct {
+    parent: ?*Pair,
     lhs: *Value,
     rhs: *Value,
 
@@ -212,6 +235,16 @@ const Pair = struct {
         const lhs_number = @as(ValueType, pair.lhs.*) == .number;
         const rhs_number = @as(ValueType, pair.rhs.*) == .number;
         return lhs_number and rhs_number;
+    }
+
+    fn level(pair: Pair) u32 {
+        var result: u32 = 0;
+        var parent = pair.parent;
+        while (parent != null) {
+            parent = parent.?.parent;
+            result += 1;
+        }
+        return result;
     }
 };
 
