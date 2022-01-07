@@ -16,28 +16,23 @@ test "full thing" {
 }
 
 fn execute(input: []const u8) !void {
-    var line_it = std.mem.tokenize(u8, input, "\n\r");
+    var string_buffer: [1024 * 1024]u8 = undefined;
 
+    var line_it = std.mem.tokenize(u8, input, "\n\r");
     var current = try parseValue(line_it.next().?);
 
-    std.debug.print("  ", .{});
-    printValue(current);
-    std.debug.print("\n", .{});
+    std.debug.print("  {s}\n", .{ current.toString(string_buffer[0..]) });
 
     while (line_it.next()) |line| {
         if (line.len == 0) continue;
 
         var other = try parseValue(line);
-        std.debug.print("+ ", .{});
-        printValue(other);
-        std.debug.print("\n", .{});
+        std.debug.print("+ {s}\n", .{ other.toString(string_buffer[0..]) });
 
         current = try add(current, other);
         try reduce(current);
 
-        std.debug.print("= ", .{});
-        printValue(current);
-        std.debug.print("\n", .{});
+        std.debug.print("= {s}\n", .{ current.toString(string_buffer[0..]) });
     }
 }
 
@@ -143,19 +138,6 @@ fn handleFirstExplosion(root: *Node) !bool {
     } else false;
 }
 
-fn printValue(root: *Node) void {
-    switch (root.value) {
-        .number => |number| std.debug.print("{}", .{ number }),
-        .pair => |pair| {
-            std.debug.print("[", .{});
-            printValue(pair.left);
-            std.debug.print(",", .{});
-            printValue(pair.right);
-            std.debug.print("]", .{});
-        }
-    }
-}
-
 fn parseValue(string: []const u8) !*Node {
     var it = StringIterator { .string = string };
     return parseValueRecursive(&it, null);
@@ -211,6 +193,26 @@ const Node = struct {
         }
 
         return result;
+    }
+
+    fn toString(node: *Node, buffer: []u8) ![]const u8 {
+        var alloc = std.heap.FixedBufferAllocator.init(buffer);
+        var string = std.ArrayList(u8).init(alloc.allocator());
+        try toStringRecursive(node, &string);
+        return string.items;
+    }
+
+    fn toStringRecursive(node: *Node, string: *std.ArrayList(u8)) std.ArrayList(u8).Writer.Error!void {
+        switch (node.value) {
+            .number => |number| try string.writer().print("{}", .{ number }),
+            .pair => |pair| {
+                try string.writer().print("[", .{});
+                try toStringRecursive(pair.left, string);
+                try string.writer().print(",", .{});
+                try toStringRecursive(pair.right, string);
+                try string.writer().print("]", .{});
+            },
+        }
     }
 };
 
