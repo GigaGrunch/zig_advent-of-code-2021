@@ -2,87 +2,81 @@ const std = @import("std");
 const test_input = @embedFile("day-19_test-input");
 
 pub fn main() !void {
-    std.debug.print("--- Day 19 ---\n", .{});
-}
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+    var alloc = gpa.allocator();
 
-test "test-input" {
-    const input = test_input;
+    var scanners = std.ArrayList(Scanner).init(alloc);
+    defer scanners.deinit();
+    defer for (scanners.items) |scanner| scanner.deinit();
+    var current_scanner: *Scanner = undefined;
 
-    var alloc = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer alloc.deinit();
-
-    const scanners = try parseScanners(input, alloc.allocator());
-
-    try std.testing.expectEqual(@as(usize, 5), scanners.len);
-    try std.testing.expectEqual(@as(usize, 25), scanners[0].beacons.len);
-    try std.testing.expectEqual(@as(usize, 25), scanners[1].beacons.len);
-    try std.testing.expectEqual(@as(usize, 26), scanners[2].beacons.len);
-    try std.testing.expectEqual(@as(usize, 25), scanners[3].beacons.len);
-    try std.testing.expectEqual(@as(usize, 26), scanners[4].beacons.len);
-}
-
-fn parseScanners(input: []const u8, allocator: std.mem.Allocator) ![]Scanner {
-    var scanners = std.ArrayList(Scanner).init(allocator);
-    var beacons = std.ArrayList(Pos).init(allocator);
-
-    var first_beacons = std.ArrayList(usize).init(allocator);
-    var current_beacon: usize = 0;
-    defer first_beacons.deinit();
-
-    var line_it = std.mem.tokenize(u8, input, "\n\r");
-    while (line_it.next()) |line| {
-        if (line.len == 0) continue;
-
-        if (std.mem.startsWith(u8, line, "--- scanner ")) {
-            try first_beacons.append(current_beacon);
+    var lines_it = std.mem.tokenize(u8, test_input, "\r\n");
+    while (lines_it.next()) |line| {
+        if (std.mem.eql(u8, line[0..3], "---")) {
+            try scanners.append(Scanner.init(alloc));
+            current_scanner = &scanners.items[scanners.items.len - 1];
         }
         else {
-            const beacon = try parseBeacon(line);
-            try beacons.append(beacon);
-            current_beacon += 1;
+            var coords_it = std.mem.tokenize(u8, line, ",");
+            try current_scanner.append(.{
+                try std.fmt.parseInt(i32, coords_it.next().?, 10),
+                try std.fmt.parseInt(i32, coords_it.next().?, 10),
+                try std.fmt.parseInt(i32, coords_it.next().?, 10),
+            });
         }
     }
 
-    for (first_beacons.items) |start, i| {
-        if (i < first_beacons.items.len - 1) {
-            const end = first_beacons.items[i + 1];
-            const scanner = Scanner { .beacons = beacons.items[start..end] };
-            try scanners.append(scanner);
-        }
-        else {
-            const scanner = Scanner { .beacons = beacons.items[start..] };
-            try scanners.append(scanner);
+    for (scanners.items) |scanner_1, s1| {
+        for (scanners.items[s1+1..]) |scanner_2, s2| {
+            std.debug.print("scanners {d} and {d}\n", .{s1, s2});
+
+            for (scanner_1.items) |origin_1| {
+                for (scanner_2.items) |origin_2| {
+                    for (scanner_1.items) |_coord_1| {
+                        const coord_1 = Coords {
+                            _coord_1[0] - origin_1[0],
+                            _coord_1[1] - origin_1[1],
+                            _coord_1[2] - origin_1[2],
+                        };
+
+                        var equal_count: u32 = 0;
+                        
+                        for (scanner_2.items) |_coord_2| {
+                            const coord_2 = Coords {
+                                _coord_2[0] - origin_2[0],
+                                _coord_2[1] - origin_2[1],
+                                _coord_2[2] - origin_2[2],
+                            };
+
+                            if (std.mem.eql(i32, &coord_1, &coord_2)) {
+                                equal_count += 1;
+
+                                // std.debug.print("( ", .{});
+                                // printCoords(_coord_1);
+                                // std.debug.print(" - ", .{});
+                                // printCoords(origin_1);
+                                // std.debug.print(") = (", .{});
+                                // printCoords(_coord_2);
+                                // std.debug.print(" - ", .{});
+                                // printCoords(origin_2);
+                                // std.debug.print(")\n", .{});
+                            }
+                        }
+
+                        if (equal_count >= 12) {
+                            std.debug.print("match!\n", .{});
+                        }
+                    }
+                }
+            }
         }
     }
-
-    return scanners.items;
 }
 
-fn parseBeacon(line: []const u8) !Pos {
-    var coord_it = std.mem.tokenize(u8, line, ",");
-    return Pos {
-        .x = try std.fmt.parseInt(i32, coord_it.next().?, 10),
-        .y = try std.fmt.parseInt(i32, coord_it.next().?, 10),
-        .z = try std.fmt.parseInt(i32, coord_it.next().?, 10),
-    };
+fn printCoords(coords: Coords) void {
+    std.debug.print("{d},{d},{d}", .{coords[0], coords[1], coords[2]});
 }
 
-test "parseBeacon" {
-    const input = "-456,654,0";
-    const expected = Pos {
-        .x = -456,
-        .y = 654,
-        .z = 0,
-    };
-    try std.testing.expectEqual(expected, try parseBeacon(input));
-}
-
-const Scanner = struct {
-    beacons: []Pos,
-};
-
-const Pos = struct {
-    x: i32,
-    y: i32,
-    z: i32,
-};
+const Coords = [3]i32;
+const Scanner = std.ArrayList(Coords);
