@@ -29,11 +29,13 @@ pub fn main() !void {
 
     for (scanners.items) |scanner_1, s1| {
         for (scanners.items[s1+1..]) |scanner_2, s2| {
-            std.debug.print("scanners {d} and {d}\n", .{s1, s2});
+            std.debug.print("scanners {d} and {d}\n", .{s1, s1+s2+1});
 
-            for (scanner_1.items) |origin_1| {
-                for (scanner_2.items) |origin_2| {
-                    for (scanner_1.items) |_coord_1| {
+            for (scanner_1.items) |origin_1, o1| {
+                for (scanner_2.items) |origin_2, o2| {
+                    for (scanner_1.items) |_coord_1, c1| {
+                        if (o1 == c1) continue;
+
                         const coord_1 = Coords {
                             _coord_1[0] - origin_1[0],
                             _coord_1[1] - origin_1[1],
@@ -42,7 +44,9 @@ pub fn main() !void {
 
                         var equal_count: u32 = 0;
                         
-                        for (scanner_2.items) |_coord_2| {
+                        for (scanner_2.items) |_coord_2, c2| {
+                            if (o2 == c2) continue;
+
                             const coord_2 = Coords {
                                 _coord_2[0] - origin_2[0],
                                 _coord_2[1] - origin_2[1],
@@ -52,15 +56,15 @@ pub fn main() !void {
                             if (std.mem.eql(i32, &coord_1, &coord_2)) {
                                 equal_count += 1;
 
-                                // std.debug.print("( ", .{});
-                                // printCoords(_coord_1);
-                                // std.debug.print(" - ", .{});
-                                // printCoords(origin_1);
-                                // std.debug.print(") = (", .{});
-                                // printCoords(_coord_2);
-                                // std.debug.print(" - ", .{});
-                                // printCoords(origin_2);
-                                // std.debug.print(")\n", .{});
+                                std.debug.print("( ", .{});
+                                printCoords(_coord_1);
+                                std.debug.print(" - ", .{});
+                                printCoords(origin_1);
+                                std.debug.print(") = (", .{});
+                                printCoords(_coord_2);
+                                std.debug.print(" - ", .{});
+                                printCoords(origin_2);
+                                std.debug.print(")\n", .{});
                             }
                         }
 
